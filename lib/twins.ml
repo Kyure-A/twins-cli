@@ -13,7 +13,7 @@ let checked_page ?session response =
   let soup = Html.parse response.body in
   if Html.is_login_page soup || Html.is_auth_error soup then (
     Option.iter Session.clear session;
-    Error.failf "TWINS session is missing or expired; run `twins login`";
+    Error.failf "TWINS session is missing or expired; run `twins auth login`";
   );
   { response; soup }
 

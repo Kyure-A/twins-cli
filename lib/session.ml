@@ -1,7 +1,7 @@
 type t = { cookies : (string, string) Hashtbl.t; path : string }
 
 let default_path () =
-  match Sys.getenv_opt "TWINS_SESSION_FILE" with
+  match Sys.getenv_opt "TWINS_SESSION" with
   | Some path when String.trim path <> "" -> path
   | _ ->
       let state_root =

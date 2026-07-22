@@ -43,21 +43,25 @@ nix-shell -p ocaml dune ocamlPackages.findlib \
 ## 認証
 
 ```console
-twins login
-twins status
+twins auth login -u 13桁の統一認証ID
+twins auth status
 ```
 
 ユーザー名とパスワードは対話入力できます。自動実行では `TWINS_USERNAME` と
 `TWINS_PASSWORD` も利用できます。パスワードは保存せず、ログイン後の Cookie
 だけを `${XDG_STATE_HOME:-~/.local/state}/twins-cli/session` にモード `0600` で
-保存します。保存先は `TWINS_SESSION_FILE` または全コマンド共通の
-`--session-file PATH` で変更できます。
+保存します。保存先は `TWINS_SESSION` または認証が必要な全コマンド共通の
+`--session FILE` で変更できます。パスワードを標準入力から読む場合は
+`--password-stdin` を使えます。
 
 セッションを破棄するには次を実行します。
 
 ```console
-twins logout
+twins auth logout
 ```
+
+認証コマンド、`--session`、`-u/--username`、`--password-stdin`、
+`-y/--yes` は姉妹ツールの `manaba` と同じ構成です。
 
 ## 使用例
 
@@ -90,12 +94,12 @@ twins cancellations --from 2026-10-01 --to 2026-10-31 --all
 
 ## 履修登録・削除
 
-変更系コマンドは、意図しない送信を防ぐため `--yes` がない限り何も変更しません。
-曜日は月曜が `1`、時限は `1`〜`9` です。
+変更系コマンドは実行直前に確認します。自動処理では `-y` または `--yes` で確認を
+省略できます。曜日は月曜が `1`、時限は `1`〜`9` です。
 
 ```console
-twins register GE00000 --module autumn-a --day 1 --period 1 --yes
-twins unregister GE00000 --module autumn-a --yes
+twins registration add GE00000 --module autumn-a --day 1 --period 1
+twins registration remove GE00000 --module autumn-a --yes
 ```
 
 TWINS が年間履修上限の確認を表示した場合だけ、規則上その登録が許されていることを
@@ -110,15 +114,16 @@ TWINS が年間履修上限の確認を表示した場合だけ、規則上そ�
 
 ```console
 twins menu
+twins menu --json
 twins raw graduation-check
 twins raw RSW0001300-flow
 twins raw notices --form keijiSearchForm --event findSelect \
   --field keijitype=3 --field keijiTitle=奨学金
 ```
 
-`raw` は TWINS の内部フォームを直接扱う上級者向け機能です。イベント名によっては
-状態を変更し得るため、ブラウザの開発者ツール等で送信内容を確認してから使って
-ください。
+`raw` は TWINS の内部フォームを直接扱う上級者向け機能です。`--event` を指定した
+場合は送信前に確認し、`-y/--yes` で省略できます。イベント名によっては状態を変更
+し得るため、ブラウザの開発者ツール等で送信内容を確認してから使ってください。
 
 ## CI
 

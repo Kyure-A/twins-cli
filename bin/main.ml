@@ -13,15 +13,15 @@ let run operation =
         (Printf.sprintf "%s: %s (%s)" function_name (Unix.error_message error)
            argument)
 
-let session_file =
+let session =
+  let env = Cmd.Env.info "TWINS_SESSION" in
   let doc =
-    "Store session cookies in $(docv). The default is \
-     $XDG_STATE_HOME/twins-cli/session."
+    "セッション Cookie の保存先。既定は XDG_STATE_HOME 以下です。"
   in
-  Arg.(value & opt (some string) None & info [ "session-file" ] ~docv:"PATH" ~doc)
+  Arg.(value & opt (some string) None & info [ "session" ] ~env ~docv:"FILE" ~doc)
 
 let json =
-  Arg.(value & flag & info [ "json" ] ~doc:"Print machine-readable JSON.")
+  Arg.(value & flag & info [ "json" ] ~doc:"機械可読な JSON で出力します。")
 
 let print_json value =
   Yojson.Safe.pretty_to_channel stdout value;
@@ -37,42 +37,59 @@ let username =
   Arg.(
     value
     & opt (some string) None
-    & info [ "u"; "username" ] ~docv:"USERNAME"
-        ~doc:"TWINS username. Defaults to $TWINS_USERNAME, then an interactive prompt.")
+    & info [ "u"; "username" ] ~docv:"ID"
+        ~doc:"統一認証 ID。省略時は TWINS_USERNAME、次に対話入力を使います。")
 
 let login_command =
-  let execute session_file username =
+  let password_stdin =
+    Arg.(
+      value & flag
+      & info [ "password-stdin" ] ~doc:"パスワードを標準入力の 1 行から読み取ります。")
+  in
+  let execute session_file username password_stdin =
     run (fun () ->
         let username =
           match (username, Sys.getenv_opt "TWINS_USERNAME") with
           | Some value, _ | None, Some value when String.trim value <> "" -> value
-          | _ -> Util.prompt_line "TWINS username: "
+          | _ -> Util.prompt_line "統一認証 ID: "
         in
-        let password = Util.read_password "TWINS password: " in
+        let password =
+          match Sys.getenv_opt "TWINS_PASSWORD" with
+          | Some value when String.trim value <> "" -> value
+          | _ when password_stdin -> input_line stdin
+          | _ -> Util.read_password "パスワード（入力・貼り付け内容は表示されません）: "
+        in
         Twins.login ?session_file ~username ~password ();
-        print_endline "Logged in; the session cookie was saved locally.")
+        print_endline "ログインしました。セッションを保存しました。")
   in
-  let term = Term.(const execute $ session_file $ username) in
-  Cmd.v (Cmd.info "login" ~doc:"Log in and save a TWINS session.") term
+  let term = Term.(const execute $ session $ username $ password_stdin) in
+  Cmd.v
+    (Cmd.info "login" ~doc:"筑波大学統一認証でログインし、Cookie だけを保存します。")
+    term
 
 let logout_command =
   let execute session_file =
     run (fun () ->
         Twins.logout ?session_file ();
-        print_endline "Logged out; the local session was removed.")
+        print_endline "ローカルのセッションを削除しました。")
   in
-  Cmd.v (Cmd.info "logout" ~doc:"Log out and remove the saved session.")
-    Term.(const execute $ session_file)
+  Cmd.v (Cmd.info "logout" ~doc:"保存した Cookie をローカルから削除します。")
+    Term.(const execute $ session)
 
 let status_command =
   let execute session_file =
     run (fun () ->
         let status = Twins.status ?session_file () in
-        if status.logged_in then print_endline "logged-in"
-        else print_endline "logged-out")
+        if status.logged_in then print_endline "logged in"
+        else print_endline "logged out")
   in
-  Cmd.v (Cmd.info "status" ~doc:"Check whether the saved session is valid.")
-    Term.(const execute $ session_file)
+  Cmd.v (Cmd.info "status" ~doc:"保存セッションが有効か確認します。")
+    Term.(const execute $ session)
+
+let auth_command =
+  Cmd.group
+    (Cmd.info "auth" ~doc:"認証セッションを管理します。")
+    [ login_command; status_command; logout_command ]
 
 let grades_command =
   let execute session_file json =
@@ -95,12 +112,12 @@ let grades_command =
                 ])
             grades))
   in
-  Cmd.v (Cmd.info "grades" ~doc:"List grades.")
-    Term.(const execute $ session_file $ json)
+  Cmd.v (Cmd.info "grades" ~doc:"成績を一覧表示します。")
+    Term.(const execute $ session $ json)
 
 let module_slug =
   let choices = List.map (fun (item : Twins.module_code) -> item.slug) Twins.modules in
-  let doc = "Academic module: " ^ String.concat ", " choices ^ "." in
+  let doc = "モジュール: " ^ String.concat ", " choices ^ "。" in
   Arg.(required & opt (some string) None & info [ "module" ] ~docv:"MODULE" ~doc)
 
 let timetable_command =
@@ -120,85 +137,93 @@ let timetable_command =
                 ])
             entries))
   in
-  Cmd.v (Cmd.info "timetable" ~doc:"Show the registered timetable.")
-    Term.(const execute $ session_file $ module_slug $ json)
+  Cmd.v (Cmd.info "timetable" ~doc:"履修時間割を表示します。")
+    Term.(const execute $ session $ module_slug $ json)
 
 let course_code =
   Arg.(required & pos 0 (some string) None & info [] ~docv:"COURSE_CODE")
 
-let yes =
-  Arg.(
-    value & flag
-    & info [ "yes" ]
-        ~doc:"Actually submit the mutation. Required for registration changes.")
+let yes = Arg.(value & flag & info [ "yes"; "y" ] ~doc:"確認なしで実行します。")
+
+let confirm yes description =
+  if yes then true
+  else (
+    Printf.eprintf "%s [y/N]: %!" description;
+    match input_line stdin |> String.trim |> String.lowercase_ascii with
+    | "y" | "yes" -> true
+    | _ -> false)
 
 let day =
   Arg.(
     required
     & opt (some int) None
-    & info [ "day" ] ~docv:"1..7" ~doc:"Day number used by TWINS (Monday is 1).")
+    & info [ "day" ] ~docv:"1..7" ~doc:"曜日番号（月曜は 1）。")
 
 let period =
   Arg.(
     required
     & opt (some int) None
-    & info [ "period" ] ~docv:"1..9" ~doc:"Starting class period.")
-
-let require_yes yes =
-  if not yes then Error.failf "refusing to change registration without --yes"
+    & info [ "period" ] ~docv:"1..9" ~doc:"開始時限。")
 
 let register_command =
   let force_limit =
     Arg.(
       value & flag
       & info [ "force-limit" ]
-          ~doc:"Accept TWINS' annual credit-limit override, if it appears.")
+          ~doc:"TWINS が年間履修上限の確認を表示した場合に承認します。")
   in
   let execute session_file module_slug day period force_limit yes code =
     run (fun () ->
-        require_yes yes;
-        if day < 1 || day > 7 then Error.failf "--day must be between 1 and 7";
+        if day < 1 || day > 7 then Error.failf "--day は 1 から 7 で指定してください。";
         if period < 1 || period > 9 then
-          Error.failf "--period must be between 1 and 9";
+          Error.failf "--period は 1 から 9 で指定してください。";
+        if not (confirm yes (Printf.sprintf "%s を履修登録します。" code)) then
+          Error.failf "登録を中止しました。";
         ignore
           (Twins.register ?session_file ~module_slug ~day ~period ~code
              ~force_limit ());
-        Printf.printf "Registered %s.\n" code)
+        Printf.printf "%s を履修登録しました。\n" code)
   in
-  Cmd.v (Cmd.info "register" ~doc:"Register a course.")
+  Cmd.v (Cmd.info "add" ~doc:"科目を履修登録します。")
     Term.(
-      const execute $ session_file $ module_slug $ day $ period $ force_limit
+      const execute $ session $ module_slug $ day $ period $ force_limit
       $ yes $ course_code)
 
 let unregister_command =
   let execute session_file module_slug yes code =
     run (fun () ->
-        require_yes yes;
+        if not (confirm yes (Printf.sprintf "%s の履修登録を削除します。" code)) then
+          Error.failf "削除を中止しました。";
         ignore (Twins.unregister ?session_file ~module_slug ~code ());
-        Printf.printf "Unregistered %s.\n" code)
+        Printf.printf "%s の履修登録を削除しました。\n" code)
   in
-  Cmd.v (Cmd.info "unregister" ~doc:"Delete a course registration.")
-    Term.(const execute $ session_file $ module_slug $ yes $ course_code)
+  Cmd.v (Cmd.info "remove" ~doc:"科目の履修登録を削除します。")
+    Term.(const execute $ session $ module_slug $ yes $ course_code)
+
+let registration_command =
+  Cmd.group
+    (Cmd.info "registration" ~doc:"履修登録を管理します。")
+    [ register_command; unregister_command ]
 
 let notice_kind =
   Arg.(
     value
     & opt (enum [ ("classes", "classes"); ("general", "general") ]) "classes"
-    & info [ "kind" ] ~docv:"KIND" ~doc:"Notice kind: classes or general.")
+    & info [ "kind" ] ~docv:"KIND" ~doc:"掲示種別: classes または general。")
 
 let notices_command =
   let unread =
-    Arg.(value & flag & info [ "unread" ] ~doc:"Only show unread notices.")
+    Arg.(value & flag & info [ "unread" ] ~doc:"未読の掲示だけを表示します。")
   in
   let title =
-    Arg.(value & opt string "" & info [ "title" ] ~docv:"TEXT" ~doc:"Filter by title.")
+    Arg.(value & opt string "" & info [ "title" ] ~docv:"TEXT" ~doc:"表題で絞り込みます。")
   in
   let limit =
     Arg.(value & opt int 50 & info [ "limit" ] ~docv:"N")
   in
   let execute session_file kind unread title limit json =
     run (fun () ->
-        if limit < 0 then Error.failf "--limit must not be negative";
+        if limit < 0 then Error.failf "--limit は 0 以上で指定してください。";
         let notices =
           Twins.notices ?session_file ~kind ~unread ~title ~limit ()
         in
@@ -214,16 +239,16 @@ let notices_command =
                 ])
             notices))
   in
-  Cmd.v (Cmd.info "notices" ~doc:"Search class or general notices.")
-    Term.(const execute $ session_file $ notice_kind $ unread $ title $ limit $ json)
+  Cmd.v (Cmd.info "notices" ~doc:"授業・一般掲示を検索します。")
+    Term.(const execute $ session $ notice_kind $ unread $ title $ limit $ json)
 
 let notice_command =
   let seq = Arg.(required & pos 0 (some string) None & info [] ~docv:"ID") in
   let execute session_file kind seq =
     run (fun () -> Twins.notice_detail ?session_file ~kind seq |> print_endline)
   in
-  Cmd.v (Cmd.info "notice" ~doc:"Show one notice body.")
-    Term.(const execute $ session_file $ notice_kind $ seq)
+  Cmd.v (Cmd.info "notice" ~doc:"掲示本文を表示します。")
+    Term.(const execute $ session $ notice_kind $ seq)
 
 let today () =
   let value = Unix.localtime (Unix.time ()) in
@@ -234,12 +259,12 @@ let cancellations_command =
   let date_option names doc =
     Arg.(value & opt string (today ()) & info names ~docv:"YYYY-MM-DD" ~doc)
   in
-  let start_date = date_option [ "from" ] "First date to search." in
-  let end_date = date_option [ "to" ] "Last date to search." in
+  let start_date = date_option [ "from" ] "検索開始日。" in
+  let end_date = date_option [ "to" ] "検索終了日。" in
   let all =
     Arg.(
       value & flag
-      & info [ "all" ] ~doc:"Include cancellations for unregistered courses.")
+      & info [ "all" ] ~doc:"未履修科目の休講情報も含めます。")
   in
   let execute session_file start_date end_date all =
     run (fun () ->
@@ -247,27 +272,44 @@ let cancellations_command =
           ~registered_only:(not all) ()
         |> print_endline)
   in
-  Cmd.v (Cmd.info "cancellations" ~doc:"Search class cancellations.")
-    Term.(const execute $ session_file $ start_date $ end_date $ all)
+  Cmd.v (Cmd.info "cancellations" ~doc:"休講情報を検索します。")
+    Term.(const execute $ session $ start_date $ end_date $ all)
 
 let menu_command =
-  let execute () =
-    Twins.menu
-    |> List.iter (fun (item : Twins.menu_item) ->
-           Printf.printf "%s\t%s\n" item.name item.flow)
+  let execute json =
+    if json then
+      Twins.menu
+      |> List.map (fun (item : Twins.menu_item) ->
+             `Assoc [ ("name", `String item.name); ("flow", `String item.flow) ])
+      |> fun items -> print_json (`List items)
+    else
+      Twins.menu
+      |> List.iter (fun (item : Twins.menu_item) ->
+             Printf.printf "%s\t%s\n" item.name item.flow)
   in
-  Cmd.v (Cmd.info "menu" ~doc:"List known TWINS menu flows.") Term.(const execute $ const ())
+  Cmd.v (Cmd.info "menu" ~doc:"既知の TWINS メニューフローを一覧表示します。")
+    Term.(const execute $ json)
 
 let raw_command =
   let flow = Arg.(required & pos 0 (some string) None & info [] ~docv:"MENU_OR_FLOW") in
   let form_name =
-    Arg.(value & opt string "InputForm" & info [ "form" ] ~docv:"NAME")
+    Arg.(
+      value
+      & opt string "InputForm"
+      & info [ "form" ] ~docv:"NAME" ~doc:"送信するフォーム名。")
   in
-  let event = Arg.(value & opt (some string) None & info [ "event" ] ~docv:"EVENT") in
+  let event =
+    Arg.(
+      value
+      & opt (some string) None
+      & info [ "event" ] ~docv:"EVENT" ~doc:"送信する Spring Web Flow イベント。")
+  in
   let field =
-    Arg.(value & opt_all string [] & info [ "field" ] ~docv:"NAME=VALUE")
+    Arg.(
+      value & opt_all string []
+      & info [ "field"; "F" ] ~docv:"NAME=VALUE" ~doc:"フォーム値。複数指定できます。")
   in
-  let execute session_file form_name event field flow =
+  let execute session_file form_name event field yes flow =
     run (fun () ->
         let fields =
           field
@@ -276,21 +318,29 @@ let raw_command =
                  | Ok field -> field
                  | Error message -> Error.failf "%s" message)
         in
+        Option.iter
+          (fun event ->
+            if
+              not
+                (confirm yes
+                   (Printf.sprintf "%s にイベント %s を送信します。" flow event))
+            then Error.failf "送信を中止しました。")
+          event;
         Twins.raw ?session_file ~flow ~form_name ~event ~fields ()
         |> print_endline)
   in
   Cmd.v
     (Cmd.info "raw"
-       ~doc:"Open a known menu flow and optionally submit one form event.")
-    Term.(const execute $ session_file $ form_name $ event $ field $ flow)
+       ~doc:"メニューフローを開き、必要ならフォームイベントを 1 回送信します。")
+    Term.(const execute $ session $ form_name $ event $ field $ yes $ flow)
 
 let command =
-  let doc = "Unofficial command-line client for the University of Tsukuba TWINS" in
+  let doc = "筑波大学 TWINS を操作する OCaml 製 CLI" in
   Cmd.group (Cmd.info "twins" ~version:"0.1.0" ~doc)
     [
-      login_command; logout_command; status_command; grades_command;
-      timetable_command; register_command; unregister_command; notices_command;
-      notice_command; cancellations_command; menu_command; raw_command;
+      auth_command; grades_command; timetable_command; registration_command;
+      notices_command; notice_command; cancellations_command; menu_command;
+      raw_command;
     ]
 
 let () = exit (Cmd.eval command)
