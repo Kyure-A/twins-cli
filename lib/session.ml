@@ -14,42 +14,51 @@ let default_path () =
       Filename.concat state_root "twins-cli/session"
 
 let create ?path () =
-  { cookies = Hashtbl.create 8; path = Option.value path ~default:(default_path ()) }
+  {
+    cookies = Hashtbl.create 8;
+    path = Option.value path ~default:(default_path ());
+  }
 
 let load ?path () =
   let session = create ?path () in
-  if Sys.file_exists session.path then (
-    let channel = open_in session.path in
-    Fun.protect ~finally:(fun () -> close_in_noerr channel) (fun () ->
-        try
-          while true do
-            let line = input_line channel in
-            if line <> "" && line.[0] <> '#' then
-              match String.index_opt line '\t' with
-              | None -> ()
-              | Some index ->
-                  let name = String.sub line 0 index in
-                  let value =
-                    String.sub line (index + 1) (String.length line - index - 1)
-                  in
-                  if name <> "" then Hashtbl.replace session.cookies name value
-          done
-        with End_of_file -> ()));
+  (if Sys.file_exists session.path then
+     let channel = open_in session.path in
+     Fun.protect
+       ~finally:(fun () -> close_in_noerr channel)
+       (fun () ->
+         try
+           while true do
+             let line = input_line channel in
+             if line <> "" && line.[0] <> '#' then
+               match String.index_opt line '\t' with
+               | None -> ()
+               | Some index ->
+                   let name = String.sub line 0 index in
+                   let value =
+                     String.sub line (index + 1) (String.length line - index - 1)
+                   in
+                   if name <> "" then Hashtbl.replace session.cookies name value
+           done
+         with End_of_file -> ()));
   session
 
 let save session =
   let directory = Filename.dirname session.path in
   Util.mkdir_p directory;
   let channel =
-    open_out_gen [ Open_wronly; Open_creat; Open_trunc; Open_text ] 0o600
-      session.path
+    open_out_gen
+      [ Open_wronly; Open_creat; Open_trunc; Open_text ]
+      0o600 session.path
   in
-  Fun.protect ~finally:(fun () -> close_out_noerr channel) (fun () ->
+  Fun.protect
+    ~finally:(fun () -> close_out_noerr channel)
+    (fun () ->
       output_string channel "# TWINS session cookies; keep this file private.\n";
-      Hashtbl.to_seq session.cookies |> List.of_seq
+      Hashtbl.to_seq session.cookies
+      |> List.of_seq
       |> List.sort (fun (left, _) (right, _) -> String.compare left right)
       |> List.iter (fun (name, value) ->
-             Printf.fprintf channel "%s\t%s\n" name value));
+          Printf.fprintf channel "%s\t%s\n" name value));
   Unix.chmod session.path 0o600
 
 let clear session =
@@ -59,7 +68,8 @@ let clear session =
 let is_empty session = Hashtbl.length session.cookies = 0
 
 let cookie_header session =
-  Hashtbl.to_seq session.cookies |> List.of_seq
+  Hashtbl.to_seq session.cookies
+  |> List.of_seq
   |> List.sort (fun (left, _) (right, _) -> String.compare left right)
   |> List.map (fun (name, value) -> name ^ "=" ^ value)
   |> String.concat "; "

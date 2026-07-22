@@ -38,9 +38,9 @@ let index_from_opt value ~from needle =
 let between ~left ~right value =
   match index_from_opt value ~from:0 left with
   | None -> None
-  | Some left_index ->
+  | Some left_index -> (
       let content_start = left_index + String.length left in
-      (match index_from_opt value ~from:content_start right with
+      match index_from_opt value ~from:content_start right with
       | None -> None
       | Some right_index ->
           Some (String.sub value content_start (right_index - content_start)))
@@ -80,36 +80,3 @@ let rec mkdir_p directory =
   else (
     mkdir_p (Filename.dirname directory);
     Unix.mkdir directory 0o700)
-
-let read_password prompt =
-  match Sys.getenv_opt "TWINS_PASSWORD" with
-  | Some password -> password
-  | None ->
-      output_string stderr prompt;
-      flush stderr;
-      let descriptor = Unix.descr_of_in_channel stdin in
-      let attributes = Unix.tcgetattr descriptor in
-      let hidden = { attributes with Unix.c_echo = false } in
-      Fun.protect
-        ~finally:(fun () ->
-          Unix.tcsetattr descriptor Unix.TCSAFLUSH attributes;
-          output_char stderr '\n';
-          flush stderr)
-        (fun () ->
-          Unix.tcsetattr descriptor Unix.TCSAFLUSH hidden;
-          input_line stdin)
-
-let prompt_line prompt =
-  output_string stderr prompt;
-  flush stderr;
-  input_line stdin |> String.trim
-
-let parse_assignment value =
-  match String.index_opt value '=' with
-  | None -> Error (Printf.sprintf "expected NAME=VALUE, got %S" value)
-  | Some index ->
-      let name = String.sub value 0 index |> String.trim in
-      let data =
-        String.sub value (index + 1) (String.length value - index - 1)
-      in
-      if name = "" then Error "field name cannot be empty" else Ok (name, data)

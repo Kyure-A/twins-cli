@@ -4,42 +4,26 @@ type field = string * string
 
 let parse = Soup.parse
 
-let node_text node = Soup.trimmed_texts node |> String.concat " " |> Util.normalize_space
-
-let attribute name node = Soup.attribute name node
+let node_text node =
+  Soup.trimmed_texts node |> String.concat " " |> Util.normalize_space
 
 let direct_cells row =
   row |> Soup.children |> Soup.elements
   |> Soup.filter (fun element ->
-         let name = Soup.name element in
-         name = "td" || name = "th")
+      let name = Soup.name element in
+      name = "td" || name = "th")
   |> Soup.to_list
 
 let cell_texts row = direct_cells row |> List.map node_text
-
 let rows table = table $$ "> tbody > tr" |> Soup.to_list
 
 let table_by_id id soup =
-  soup $$ "table"
-  |> Soup.to_list
-  |> List.find_opt (fun table -> Soup.attribute "id" table = Some id)
-
-let table_with_headers expected soup =
-  let contains_header table expected_header =
-    table $$ "th" |> Soup.to_list
-    |> List.exists (fun header -> node_text header = expected_header)
-  in
   soup $$ "table" |> Soup.to_list
-  |> List.find_opt (fun table ->
-         List.for_all (contains_header table) expected)
+  |> List.find_opt (fun table -> Soup.attribute "id" table = Some id)
 
 let form_by_name name soup =
   soup $$ "form" |> Soup.to_list
   |> List.find_opt (fun form -> Soup.attribute "name" form = Some name)
-
-let form_by_id id soup =
-  soup $$ "form" |> Soup.to_list
-  |> List.find_opt (fun form -> Soup.attribute "id" form = Some id)
 
 let control_name control =
   match Soup.attribute "name" control with
@@ -49,13 +33,14 @@ let control_name control =
 let input_fields input =
   match control_name input with
   | None -> []
-  | Some name ->
+  | Some name -> (
       let input_type =
-        Soup.attribute "type" input |> Option.value ~default:"text"
+        Soup.attribute "type" input
+        |> Option.value ~default:"text"
         |> String.lowercase_ascii
       in
       let value = Soup.attribute "value" input |> Option.value ~default:"" in
-      (match input_type with
+      match input_type with
       | "submit" | "button" | "reset" | "file" | "image" -> []
       | "checkbox" | "radio" ->
           if Soup.has_attribute "checked" input then [ (name, value) ] else []
@@ -72,14 +57,14 @@ let select_fields select =
       in
       let selected =
         match selected with
-        | [] -> (match options with [] -> [] | first :: _ -> [ first ])
+        | [] -> ( match options with [] -> [] | first :: _ -> [ first ])
         | values -> values
       in
       selected
       |> List.map (fun option ->
-             ( name,
-               Soup.attribute "value" option
-               |> Option.value ~default:(node_text option) ))
+          ( name,
+            Soup.attribute "value" option
+            |> Option.value ~default:(node_text option) ))
 
 let textarea_fields textarea =
   match control_name textarea with
@@ -118,10 +103,10 @@ let portal_hash soup =
   match
     soup $$ "script" |> Soup.to_list
     |> List.filter_map (fun script ->
-           let source = Soup.texts script |> String.concat "" in
-           match Util.between ~left:"'rwfHash'" ~right:"\n" source with
-           | None -> None
-           | Some line -> Util.between ~left:"'" ~right:"'" line)
+        let source = Soup.texts script |> String.concat "" in
+        match Util.between ~left:"'rwfHash'" ~right:"\n" source with
+        | None -> None
+        | Some line -> Util.between ~left:"'" ~right:"'" line)
   with
   | hash :: _ -> Some hash
   | [] -> None
@@ -141,7 +126,10 @@ let title soup =
 
 let article_text soup =
   let articles = soup $$ "article" |> Soup.to_list in
-  let roots = if articles = [] then [ Soup.coerce soup ] else List.map Soup.coerce articles in
+  let roots =
+    if articles = [] then [ Soup.coerce soup ]
+    else List.map Soup.coerce articles
+  in
   roots
   |> List.concat_map Soup.trimmed_texts
   |> List.map Util.normalize_space
@@ -150,7 +138,8 @@ let article_text soup =
 
 let messages soup =
   soup $$ ".error, .errors, .err, .message, .messages, .alert" |> Soup.to_list
-  |> List.map node_text |> List.filter (fun text -> text <> "")
+  |> List.map node_text
+  |> List.filter (fun text -> text <> "")
   |> Util.deduplicate
 
 type registration = {
@@ -169,23 +158,25 @@ let call_arguments function_name source =
   | Some arguments ->
       Some
         (arguments |> String.split_on_char ','
-        |> List.map (fun argument -> argument |> String.trim |> Util.strip_quotes))
+        |> List.map (fun argument ->
+            argument |> String.trim |> Util.strip_quotes))
 
 let registrations soup =
   soup $$ "a[onclick]" |> Soup.to_list
   |> List.filter_map (fun anchor ->
-         match Soup.attribute "onclick" anchor with
-         | None -> None
-         | Some onclick -> (
-             match call_arguments "DeleteCallA" onclick with
-             | Some [ year; department; code; day; period ] ->
-                 let description =
-                   match Soup.parent anchor with
-                   | None -> node_text anchor
-                   | Some parent -> node_text parent
-                 in
-                 Some { year; department; code; day; period; description }
-             | _ -> None))
+      match Soup.attribute "onclick" anchor with
+      | None -> None
+      | Some onclick -> (
+          match call_arguments "DeleteCallA" onclick with
+          | Some [ year; department; code; day; period ] ->
+              let description =
+                match Soup.parent anchor with
+                | None -> node_text anchor
+                | Some parent -> node_text parent
+              in
+              Some { year; department; code; day; period; description }
+          | _ -> None))
 
 let query_param name href =
-  try Uri.get_query_param (Uri.of_string href) name with _ -> None
+  try Uri.get_query_param (Uri.of_string href) name
+  with Invalid_argument _ -> None

@@ -40,3 +40,25 @@ test "$mutation_status" -eq 1
 grep -q "登録を中止しました" <<<"$mutation_output"
 
 test ! -e "$session_file"
+
+set +e
+invalid_module_output=$("${cli[@]}" timetable --module winter-z 2>&1)
+invalid_module_status=$?
+invalid_day_output=$("${cli[@]}" registration add TEST000 \
+  --module autumn-a --day 0 --period 1 --yes 2>&1)
+invalid_day_status=$?
+invalid_period_output=$("${cli[@]}" registration add TEST000 \
+  --module autumn-a --day 1 --period 10 --yes 2>&1)
+invalid_period_status=$?
+invalid_date_output=$("${cli[@]}" cancellations --from 2025-02-29 2>&1)
+invalid_date_status=$?
+set -e
+
+test "$invalid_module_status" -eq 1
+grep -q 'unknown module "winter-z"' <<<"$invalid_module_output"
+test "$invalid_day_status" -eq 1
+grep -q -- '--day は 1 から 7' <<<"$invalid_day_output"
+test "$invalid_period_status" -eq 1
+grep -q -- '--period は 1 から 9' <<<"$invalid_period_output"
+test "$invalid_date_status" -eq 1
+grep -q 'date must use YYYY-MM-DD: "2025-02-29"' <<<"$invalid_date_output"

@@ -82,6 +82,7 @@
               dune_3
               findlib
               ocaml
+              ocamlformat
             ];
           };
         }

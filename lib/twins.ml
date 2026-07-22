@@ -6,15 +6,16 @@ let campus_path = "/campusweb/"
 let make_uri ?(query = []) path =
   Uri.make ~scheme:"https" ~host ~path:(campus_path ^ path) ~query ()
 
-let absolute_uri base href = Uri.resolve "" base (Uri.of_string href)
+let absolute_uri base href =
+  let scheme = Uri.scheme base |> Option.value ~default:"https" in
+  Uri.resolve scheme base (Uri.of_string href)
 
 let checked_page ?session response =
   Http_client.ensure_success response;
-  let soup = Html.parse response.body in
+  let soup = Html.parse (Http_client.body response) in
   if Html.is_login_page soup || Html.is_auth_error soup then (
     Option.iter Session.clear session;
-    Error.failf "TWINS session is missing or expired; run `twins auth login`";
-  );
+    Internal_error.authentication_required ());
   { response; soup }
 
 let get_page session uri = Http_client.get session uri |> checked_page ~session
@@ -29,45 +30,45 @@ let start_flow session flow_id =
 let flow_key page =
   match Html.flow_key page.soup with
   | Some key -> key
-  | None -> Error.failf "TWINS did not return a Web Flow execution key"
+  | None ->
+      Internal_error.protocolf "TWINS did not return a Web Flow execution key"
 
 let form_fields_by_name page name =
   match Html.form_by_name name page.soup with
   | Some form -> Html.form_fields form
-  | None -> Error.failf "TWINS page does not contain form %S" name
+  | None -> Internal_error.protocolf "TWINS page does not contain form %S" name
 
 let post_event session page ~form_name event replacements =
   let fields = form_fields_by_name page form_name in
-  let fields =
-    Html.set_fields (("_eventId", event) :: replacements) fields
-  in
+  let fields = Html.set_fields (("_eventId", event) :: replacements) fields in
   post_page session (make_uri "campussquare.do") fields
 
 let with_session ?session_file operation =
   let session = Session.load ?path:session_file () in
   Fun.protect
-    ~finally:(fun () -> if not (Session.is_empty session) then Session.save session)
+    ~finally:(fun () ->
+      if not (Session.is_empty session) then Session.save session)
     (fun () -> operation session)
 
 let find_login_form soup =
   soup |> Soup.select "form" |> Soup.to_list
   |> List.find_opt (fun form ->
-         Soup.select_one "input[name='userName']" form <> None)
+      Soup.select_one "input[name='userName']" form <> None)
 
-let login ?session_file ~username ~password () =
+let login_exn ?session_file ~username ~password () =
   let session = Session.create ?path:session_file () in
   let initial = Http_client.get session (make_uri "") in
   Http_client.ensure_success initial;
-  let soup = Html.parse initial.body in
+  let soup = Html.parse (Http_client.body initial) in
   let form =
     match find_login_form soup with
     | Some form -> form
-    | None -> Error.failf "TWINS login form was not found"
+    | None -> Internal_error.protocolf "TWINS login form was not found"
   in
   let portal_hash =
     match Html.portal_hash soup with
     | Some hash -> hash
-    | None -> Error.failf "TWINS portal token was not found"
+    | None -> Internal_error.protocolf "TWINS portal token was not found"
   in
   let fields =
     Html.form_fields form
@@ -83,21 +84,28 @@ let login ?session_file ~username ~password () =
   in
   let result = Http_client.post_form session (make_uri "portal.do") fields in
   Http_client.ensure_success result;
-  if not (Util.contains ~needle:"login ok." result.body) then (
+  if not (Util.contains ~needle:"login ok." (Http_client.body result)) then (
     Session.clear session;
     let message =
-      let page = Html.parse result.body in
+      let page = Html.parse (Http_client.body result) in
       match Html.messages page with
       | message :: _ -> message
       | [] -> Html.article_text page
     in
     let suffix = if message = "" then "" else ": " ^ message in
-    Error.failf "TWINS login failed%s" suffix);
-  let main = Http_client.get session (make_uri "portal.do" ~query:[ ("page", [ "main" ]) ]) in
+    Internal_error.protocolf "TWINS login failed%s" suffix);
+  let main =
+    Http_client.get session
+      (make_uri "portal.do" ~query:[ ("page", [ "main" ]) ])
+  in
   ignore (checked_page ~session main);
   Session.save session
 
-let logout ?session_file () =
+let login ?session_file ~username ~password () =
+  Internal_error.protect (fun () ->
+      login_exn ?session_file ~username ~password ())
+
+let logout_exn ?session_file () =
   let session = Session.load ?path:session_file () in
   Fun.protect
     ~finally:(fun () -> Session.clear session)
@@ -107,9 +115,12 @@ let logout ?session_file () =
           (Http_client.get session
              (make_uri "portal.do" ~query:[ ("page", [ "logout" ]) ])))
 
+let logout ?session_file () =
+  Internal_error.protect (fun () -> logout_exn ?session_file ())
+
 type status = { logged_in : bool; title : string }
 
-let status ?session_file () =
+let status_exn ?session_file () =
   let session = Session.load ?path:session_file () in
   if Session.is_empty session then { logged_in = false; title = "" }
   else
@@ -118,13 +129,16 @@ let status ?session_file () =
         (make_uri "portal.do" ~query:[ ("page", [ "main" ]) ])
     in
     Http_client.ensure_success response;
-    let soup = Html.parse response.body in
+    let soup = Html.parse (Http_client.body response) in
     if Html.is_login_page soup || Html.is_auth_error soup then (
       Session.clear session;
       { logged_in = false; title = Html.title soup })
     else (
       Session.save session;
       { logged_in = true; title = Html.title soup })
+
+let status ?session_file () =
+  Internal_error.protect (fun () -> status_exn ?session_file ())
 
 type grade = {
   year : string;
@@ -156,66 +170,129 @@ let grade_to_yojson grade =
       ("total", `String grade.total);
     ]
 
-let parse_grades soup =
+let parse_grades_exn soup =
   let table =
     match Html.table_by_id "auto-table-4" soup with
     | Some table -> table
-    | None -> Error.failf "TWINS grade table was not found"
+    | None -> Internal_error.protocolf "TWINS grade table was not found"
   in
   Html.rows table
   |> List.filter_map (fun row ->
-         match Html.cell_texts row with
-         | number :: year :: term :: category :: code :: name :: instructor
-           :: credits :: spring :: autumn :: score :: total :: _
-           when number <> "No." ->
-             Some
-               {
-                 year;
-                 term;
-                 category;
-                 code;
-                 name;
-                 instructor;
-                 credits;
-                 spring;
-                 autumn;
-                 score;
-                 total;
-               }
-         | _ -> None)
+      match Html.cell_texts row with
+      | number :: year :: term :: category :: code :: name :: instructor
+        :: credits :: spring :: autumn :: score :: total :: _
+        when number <> "No." ->
+          Some
+            {
+              year;
+              term;
+              category;
+              code;
+              name;
+              instructor;
+              credits;
+              spring;
+              autumn;
+              score;
+              total;
+            }
+      | _ -> None)
 
-let grades ?session_file () =
+let grades_exn ?session_file () =
   with_session ?session_file (fun session ->
       start_flow session "SIW0001200-flow" |> fun page ->
-      parse_grades page.soup)
+      parse_grades_exn page.soup)
 
-type module_code = {
-  slug : string;
-  label : string;
-  module_code : string;
-  term_code : string;
-}
+let grades ?session_file () =
+  Internal_error.protect (fun () -> grades_exn ?session_file ())
 
-let modules =
-  [
-    { slug = "spring-a"; label = "春A"; module_code = "1"; term_code = "A" };
-    { slug = "spring-b"; label = "春B"; module_code = "2"; term_code = "A" };
-    { slug = "spring-c"; label = "春C"; module_code = "3"; term_code = "A" };
-    { slug = "summer"; label = "夏休"; module_code = "A"; term_code = "A" };
-    { slug = "autumn-a"; label = "秋A"; module_code = "4"; term_code = "B" };
-    { slug = "autumn-b"; label = "秋B"; module_code = "5"; term_code = "B" };
-    { slug = "autumn-c"; label = "秋C"; module_code = "6"; term_code = "B" };
-    { slug = "spring-break"; label = "春休"; module_code = "B"; term_code = "B" };
-  ]
+let parse_grades soup = Internal_error.protect (fun () -> parse_grades_exn soup)
 
-let module_of_slug slug =
-  match List.find_opt (fun candidate -> candidate.slug = slug) modules with
-  | Some module_code -> module_code
-  | None ->
-      Error.failf "unknown module %S (use %s)" slug
-        (modules |> List.map (fun item -> item.slug) |> String.concat ", ")
+module Module = struct
+  type t =
+    | Spring_a
+    | Spring_b
+    | Spring_c
+    | Summer
+    | Autumn_a
+    | Autumn_b
+    | Autumn_c
+    | Spring_break
 
-let registration_page session module_code =
+  let all =
+    [
+      Spring_a;
+      Spring_b;
+      Spring_c;
+      Summer;
+      Autumn_a;
+      Autumn_b;
+      Autumn_c;
+      Spring_break;
+    ]
+
+  let to_string = function
+    | Spring_a -> "spring-a"
+    | Spring_b -> "spring-b"
+    | Spring_c -> "spring-c"
+    | Summer -> "summer"
+    | Autumn_a -> "autumn-a"
+    | Autumn_b -> "autumn-b"
+    | Autumn_c -> "autumn-c"
+    | Spring_break -> "spring-break"
+
+  let label = function
+    | Spring_a -> "春A"
+    | Spring_b -> "春B"
+    | Spring_c -> "春C"
+    | Summer -> "夏休"
+    | Autumn_a -> "秋A"
+    | Autumn_b -> "秋B"
+    | Autumn_c -> "秋C"
+    | Spring_break -> "春休"
+
+  let codes = function
+    | Spring_a -> ("1", "A")
+    | Spring_b -> ("2", "A")
+    | Spring_c -> ("3", "A")
+    | Summer -> ("A", "A")
+    | Autumn_a -> ("4", "B")
+    | Autumn_b -> ("5", "B")
+    | Autumn_c -> ("6", "B")
+    | Spring_break -> ("B", "B")
+
+  let of_string value =
+    match List.find_opt (fun candidate -> to_string candidate = value) all with
+    | Some value -> Ok value
+    | None ->
+        Error
+          (Error.Invalid_argument
+             (Printf.sprintf "unknown module %S (use %s)" value
+                (all |> List.map to_string |> String.concat ", ")))
+end
+
+module Day = struct
+  type t = int
+
+  let to_int value = value
+
+  let of_int value =
+    if value >= 1 && value <= 7 then Ok value
+    else Error (Error.Invalid_argument "--day は 1 から 7 で指定してください。")
+end
+
+module Period = struct
+  type t = int
+
+  let to_int value = value
+
+  let of_int value =
+    if value >= 1 && value <= 9 then Ok value
+    else Error (Error.Invalid_argument "--period は 1 から 9 で指定してください。")
+end
+
+let registration_page session module_ =
+  let module_code, term_code = Module.codes module_ in
   let page = start_flow session "RSW0001000-flow" in
   let key = flow_key page in
   get_page session
@@ -224,8 +301,8 @@ let registration_page session module_code =
          [
            ("_flowExecutionKey", [ key ]);
            ("_eventId", [ "search" ]);
-           ("moduleCode", [ module_code.module_code ]);
-           ("gakkiKbnCode", [ module_code.term_code ]);
+           ("moduleCode", [ module_code ]);
+           ("gakkiKbnCode", [ term_code ]);
          ])
 
 type timetable_entry = {
@@ -249,7 +326,8 @@ let timetable_entry_to_yojson entry =
     ]
 
 let cell_parts cell =
-  Soup.trimmed_texts cell |> List.map Util.normalize_space
+  Soup.trimmed_texts cell
+  |> List.map Util.normalize_space
   |> List.filter (fun part -> part <> "")
 
 let rec combine_shortest left right =
@@ -258,7 +336,7 @@ let rec combine_shortest left right =
       (left_value, right_value) :: combine_shortest left_rest right_rest
   | _ -> []
 
-let parse_timetable module_code soup =
+let parse_timetable_exn module_ soup =
   let regular =
     match Html.table_by_id "auto-table-2-2" soup with
     | None -> []
@@ -273,26 +351,26 @@ let parse_timetable module_code soup =
             in
             periods
             |> List.concat_map (fun row ->
-                   match Html.direct_cells row with
-                   | [] -> []
-                   | period_cell :: course_cells ->
-                       let period = Html.node_text period_cell in
-                       combine_shortest days course_cells
-                       |> List.filter_map (fun (day, cell) ->
-                              let parts = cell_parts cell in
-                              match parts with
-                              | [] | [ "未登録" ] -> None
-                              | code :: description ->
-                                  Some
-                                    {
-                                      module_label = module_code.label;
-                                      day;
-                                      period;
-                                      code;
-                                      description =
-                                        String.concat " " (code :: description);
-                                      intensive = false;
-                                    })) )
+                match Html.direct_cells row with
+                | [] -> []
+                | period_cell :: course_cells ->
+                    let period = Html.node_text period_cell in
+                    combine_shortest days course_cells
+                    |> List.filter_map (fun (day, cell) ->
+                        let parts = cell_parts cell in
+                        match parts with
+                        | [] | [ "未登録" ] -> None
+                        | code :: description ->
+                            Some
+                              {
+                                module_label = Module.label module_;
+                                day;
+                                period;
+                                code;
+                                description =
+                                  String.concat " " (code :: description);
+                                intensive = false;
+                              })))
   in
   let intensive =
     match Html.table_by_id "auto-table-2-3" soup with
@@ -300,46 +378,54 @@ let parse_timetable module_code soup =
     | Some table ->
         Html.rows table
         |> List.filter_map (fun row ->
-               match Html.cell_texts row with
-               | day :: period :: code :: name :: _blank :: instructor :: _
-                 when code <> "科目番号" && code <> "" ->
-                   Some
-                     {
-                       module_label = module_code.label;
-                       day;
-                       period;
-                       code;
-                       description =
-                         [ code; name; instructor ]
-                         |> List.filter (fun value -> value <> "")
-                         |> String.concat " ";
-                       intensive = true;
-                     }
-               | _ -> None)
+            match Html.cell_texts row with
+            | day :: period :: code :: name :: _blank :: instructor :: _
+              when code <> "科目番号" && code <> "" ->
+                Some
+                  {
+                    module_label = Module.label module_;
+                    day;
+                    period;
+                    code;
+                    description =
+                      [ code; name; instructor ]
+                      |> List.filter (fun value -> value <> "")
+                      |> String.concat " ";
+                    intensive = true;
+                  }
+            | _ -> None)
   in
   regular @ intensive
 
-let timetable ?session_file module_slug =
-  let module_code = module_of_slug module_slug in
+let timetable_exn ?session_file module_ =
   with_session ?session_file (fun session ->
-      let page = registration_page session module_code in
-      parse_timetable module_code page.soup)
+      let page = registration_page session module_ in
+      parse_timetable_exn module_ page.soup)
+
+let timetable ?session_file module_ =
+  Internal_error.protect (fun () -> timetable_exn ?session_file module_)
+
+let parse_timetable module_ soup =
+  Internal_error.protect (fun () -> parse_timetable_exn module_ soup)
 
 let registration_codes soup =
   Html.registrations soup
   |> List.map (fun (registration : Html.registration) -> registration.code)
   |> Util.deduplicate
 
-let register ?session_file ~module_slug ~day ~period ~code ~force_limit () =
-  let module_code = module_of_slug module_slug in
+let register_exn ?session_file ~module_ ~day ~period ~code ~force_limit () =
   with_session ?session_file (fun session ->
-      let before = registration_page session module_code in
+      let before = registration_page session module_ in
       let before_codes = registration_codes before.soup in
       if List.mem code before_codes then
-        Error.failf "%s is already registered in %s" code module_code.label;
+        Internal_error.protocolf "%s is already registered in %s" code
+          (Module.label module_);
       let input =
         post_event session before ~form_name:"InputForm" "input"
-          [ ("yobi", string_of_int day); ("jigen", string_of_int period) ]
+          [
+            ("yobi", string_of_int (Day.to_int day));
+            ("jigen", string_of_int (Period.to_int period));
+          ]
       in
       let fields =
         form_fields_by_name input "InputForm"
@@ -348,40 +434,47 @@ let register ?session_file ~module_slug ~day ~period ~code ~force_limit () =
       let result = post_page session (make_uri "campussquare.do") fields in
       let result =
         if
-          Util.contains ~needle:"kyoseiToroku" result.response.body
+          Util.contains ~needle:"kyoseiToroku"
+            (Http_client.body result.response)
           && not (List.mem code (registration_codes result.soup))
         then
           if not force_limit then
-            Error.failf
-              "registration requires overriding the annual credit limit; rerun with --force-limit if that is permitted"
+            Internal_error.protocolf
+              "registration requires overriding the annual credit limit; rerun \
+               with --force-limit if that is permitted"
           else
             post_event session result ~form_name:"InputForm"
               "kyoseiTorokuGakusei" []
         else result
       in
       let after_codes = registration_codes result.soup in
-      if not (List.mem code after_codes) then (
-        let messages = Html.messages result.soup |> String.concat "; " in
-        let suffix = if messages = "" then "" else ": " ^ messages in
-        Error.failf "TWINS did not register %s%s" code suffix);
+      (if not (List.mem code after_codes) then
+         let messages = Html.messages result.soup |> String.concat "; " in
+         let suffix = if messages = "" then "" else ": " ^ messages in
+         Internal_error.protocolf "TWINS did not register %s%s" code suffix);
       result)
 
-let unregister ?session_file ~module_slug ~code () =
-  let module_code = module_of_slug module_slug in
+let register ?session_file ~module_ ~day ~period ~code ~force_limit () =
+  Internal_error.protect (fun () ->
+      ignore
+        (register_exn ?session_file ~module_ ~day ~period ~code ~force_limit ()))
+
+let unregister_exn ?session_file ~module_ ~code () =
   with_session ?session_file (fun session ->
-      let before = registration_page session module_code in
+      let before = registration_page session module_ in
       let target =
         Html.registrations before.soup
         |> List.find_opt (fun (registration : Html.registration) ->
-               registration.code = code)
+            registration.code = code)
       in
       let target =
         match target with
         | Some target -> target
         | None ->
-            Error.failf
-              "%s is not deletable in %s (it may be unregistered or outside the registration period)"
-              code module_code.label
+            Internal_error.protocolf
+              "%s is not deletable in %s (it may be unregistered or outside \
+               the registration period)"
+              code (Module.label module_)
       in
       let confirmation =
         post_event session before ~form_name:"DeleteForm" "delete"
@@ -398,13 +491,19 @@ let unregister ?session_file ~module_slug ~code () =
         not
           (Util.contains ~needle:"以下の時間割を削除" confirmation_text
           && Util.contains ~needle:code confirmation_text)
-      then Error.failf "TWINS did not show the expected deletion confirmation";
+      then
+        Internal_error.protocolf
+          "TWINS did not show the expected deletion confirmation";
       let result =
         post_event session confirmation ~form_name:"InputForm" "delete" []
       in
       if List.mem code (registration_codes result.soup) then
-        Error.failf "TWINS still shows %s after deletion" code;
+        Internal_error.protocolf "TWINS still shows %s after deletion" code;
       result)
+
+let unregister ?session_file ~module_ ~code () =
+  Internal_error.protect (fun () ->
+      ignore (unregister_exn ?session_file ~module_ ~code ()))
 
 type notice = {
   seq : string;
@@ -428,6 +527,21 @@ let notice_to_yojson notice =
       ("posted", `String notice.posted);
     ]
 
+module Notice_kind = struct
+  type t = Classes | General
+
+  let all = [ Classes; General ]
+  let to_string = function Classes -> "classes" | General -> "general"
+
+  let of_string = function
+    | "classes" -> Ok Classes
+    | "general" -> Ok General
+    | value ->
+        Error
+          (Error.Invalid_argument
+             (Printf.sprintf "notice kind must be classes or general: %S" value))
+end
+
 let notices_page session ~kind ~unread ~title =
   let page = start_flow session "KJW0001100-flow" in
   let fields = form_fields_by_name page "keijiSearchForm" in
@@ -436,7 +550,10 @@ let notices_page session ~kind ~unread ~title =
     |> Html.set_fields
          [
            ("_eventId", "findSelect");
-           ("keijitype", if kind = "classes" then "1" else "3");
+           ( "keijitype",
+             match kind with
+             | Notice_kind.Classes -> "1"
+             | Notice_kind.General -> "3" );
            ("keijiTitle", title);
          ]
   in
@@ -450,73 +567,129 @@ let parse_notices soup =
   let table =
     match Html.table_by_id "auto-table-3" soup with
     | Some table -> table
-    | None -> Error.failf "TWINS notice result table was not found"
+    | None -> Internal_error.protocolf "TWINS notice result table was not found"
   in
   Html.rows table
   |> List.filter_map (fun row ->
-         match Html.cell_texts row with
-         | genre :: course :: instructor :: title :: period :: posted :: _
-           when genre <> "ジャンル" ->
-             let seq =
-               match
-                 row |> Soup.select "a[href]" |> Soup.to_list
-                 |> List.filter_map (fun anchor ->
-                        Option.bind (Soup.attribute "href" anchor)
-                          (Html.query_param "seqNo"))
-               with
-               | seq :: _ -> seq
-               | [] -> ""
-             in
-             Some { seq; genre; course; instructor; title; period; posted }
-         | _ -> None)
+      match Html.cell_texts row with
+      | genre :: course :: instructor :: title :: period :: posted :: _
+        when genre <> "ジャンル" ->
+          let seq =
+            match
+              row |> Soup.select "a[href]" |> Soup.to_list
+              |> List.filter_map (fun anchor ->
+                  Option.bind
+                    (Soup.attribute "href" anchor)
+                    (Html.query_param "seqNo"))
+            with
+            | seq :: _ -> seq
+            | [] -> ""
+          in
+          Some { seq; genre; course; instructor; title; period; posted }
+      | _ -> None)
 
-let notices ?session_file ~kind ~unread ~title ~limit () =
-  if kind <> "classes" && kind <> "general" then
-    Error.failf "notice kind must be classes or general";
+let notices_exn ?session_file ~kind ~unread ~title ~limit () =
   with_session ?session_file (fun session ->
       notices_page session ~kind ~unread ~title |> fun page ->
       parse_notices page.soup |> Util.take limit)
 
-let notice_detail ?session_file ~kind seq =
+let notices ?session_file ~kind ~unread ~title ~limit () =
+  if limit < 0 then Error (Error.Invalid_argument "--limit は 0 以上で指定してください。")
+  else
+    Internal_error.protect (fun () ->
+        notices_exn ?session_file ~kind ~unread ~title ~limit ())
+
+let notice_detail_exn ?session_file ~kind seq =
   with_session ?session_file (fun session ->
       let page = notices_page session ~kind ~unread:false ~title:"" in
       let href =
         page.soup |> Soup.select "a[href]" |> Soup.to_list
         |> List.find_map (fun anchor ->
-               match Soup.attribute "href" anchor with
-               | Some href when Html.query_param "seqNo" href = Some seq ->
-                   Some href
-               | _ -> None)
+            match Soup.attribute "href" anchor with
+            | Some href when Html.query_param "seqNo" href = Some seq ->
+                Some href
+            | _ -> None)
       in
       match href with
-      | None -> Error.failf "notice %s was not found in the current result set" seq
+      | None ->
+          Internal_error.protocolf
+            "notice %s was not found in the current result set" seq
       | Some href ->
-          get_page session (absolute_uri page.response.uri href) |> fun detail ->
-          Html.article_text detail.soup)
+          get_page session (absolute_uri (Http_client.uri page.response) href)
+          |> fun detail -> Html.article_text detail.soup)
 
-let date_parts value =
-  match String.split_on_char '-' value with
-  | [ year; month; day ] -> [ ("year", year); ("month", month); ("day", day) ]
-  | _ -> Error.failf "date must use YYYY-MM-DD: %S" value
+let notice_detail ?session_file ~kind seq =
+  Internal_error.protect (fun () -> notice_detail_exn ?session_file ~kind seq)
 
-let cancellations ?session_file ~start_date ~end_date ~registered_only () =
+module Date = struct
+  type t = { year : int; month : int; day : int }
+
+  let is_leap year = year mod 400 = 0 || (year mod 4 = 0 && year mod 100 <> 0)
+
+  let days_in_month year = function
+    | 1 | 3 | 5 | 7 | 8 | 10 | 12 -> 31
+    | 4 | 6 | 9 | 11 -> 30
+    | 2 -> if is_leap year then 29 else 28
+    | _ -> 0
+
+  let of_string value =
+    let invalid () =
+      Error
+        (Error.Invalid_argument
+           (Printf.sprintf "date must use YYYY-MM-DD: %S" value))
+    in
+    match String.split_on_char '-' value with
+    | [ year; month; day ]
+      when String.length year = 4
+           && String.length month = 2
+           && String.length day = 2 -> (
+        match
+          ( int_of_string_opt year,
+            int_of_string_opt month,
+            int_of_string_opt day )
+        with
+        | Some year, Some month, Some day
+          when year >= 1 && month >= 1 && month <= 12 && day >= 1
+               && day <= days_in_month year month ->
+            Ok { year; month; day }
+        | _ -> invalid ())
+    | _ -> invalid ()
+
+  let to_string (value : t) =
+    Printf.sprintf "%04d-%02d-%02d" value.year value.month value.day
+
+  let parts (value : t) =
+    [
+      ("year", Printf.sprintf "%04d" value.year);
+      ("month", Printf.sprintf "%02d" value.month);
+      ("day", Printf.sprintf "%02d" value.day);
+    ]
+end
+
+let cancellations_exn ?session_file ~start_date ~end_date ~registered_only () =
   with_session ?session_file (fun session ->
       let page = start_flow session "KHW0001100-flow" in
       let fields = form_fields_by_name page "searchForm" in
-      let start_parts = date_parts start_date in
-      let end_parts = date_parts end_date in
+      let start_parts = Date.parts start_date in
+      let end_parts = Date.parts end_date in
       let prefixed prefix parts =
-        parts |> List.map (fun (suffix, value) -> (prefix ^ "_" ^ suffix, value))
+        parts
+        |> List.map (fun (suffix, value) -> (prefix ^ "_" ^ suffix, value))
       in
       let replacements =
         [
           ("dispType", "list");
           ("dispData", "all");
-          ("startDay", String.concat "/" (String.split_on_char '-' start_date));
-          ("endDay", String.concat "/" (String.split_on_char '-' end_date));
+          ( "startDay",
+            String.concat "/"
+              (String.split_on_char '-' (Date.to_string start_date)) );
+          ( "endDay",
+            String.concat "/"
+              (String.split_on_char '-' (Date.to_string end_date)) );
           ("_eventId_search", " 表 示 す る");
         ]
-        @ prefixed "startDay" start_parts @ prefixed "endDay" end_parts
+        @ prefixed "startDay" start_parts
+        @ prefixed "endDay" end_parts
       in
       let fields = Html.set_fields replacements fields in
       let fields =
@@ -525,6 +698,10 @@ let cancellations ?session_file ~start_date ~end_date ~registered_only () =
       in
       let result = post_page session (make_uri "campussquare.do") fields in
       Html.article_text result.soup)
+
+let cancellations ?session_file ~start_date ~end_date ~registered_only () =
+  Internal_error.protect (fun () ->
+      cancellations_exn ?session_file ~start_date ~end_date ~registered_only ())
 
 type menu_item = { name : string; flow : string }
 
@@ -551,12 +728,12 @@ let menu =
   ]
 
 let resolve_flow name =
-  match List.find_opt (fun item -> item.name = name) menu with
+  match List.find_opt (fun (item : menu_item) -> item.name = name) menu with
   | Some item -> item.flow
   | None when Util.contains ~needle:"-flow" name -> name
-  | None -> Error.failf "unknown menu or flow %S" name
+  | None -> Internal_error.invalidf "unknown menu or flow %S" name
 
-let raw ?session_file ~flow ~form_name ~event ~fields () =
+let raw_exn ?session_file ~flow ~form_name ~event ~fields () =
   with_session ?session_file (fun session ->
       let page = start_flow session (resolve_flow flow) in
       let page =
@@ -565,3 +742,7 @@ let raw ?session_file ~flow ~form_name ~event ~fields () =
         | Some event -> post_event session page ~form_name event fields
       in
       Html.article_text page.soup)
+
+let raw ?session_file ~flow ~form_name ~event ~fields () =
+  Internal_error.protect (fun () ->
+      raw_exn ?session_file ~flow ~form_name ~event ~fields ())
