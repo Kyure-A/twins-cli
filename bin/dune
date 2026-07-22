@@ -1,0 +1,4 @@
+(executable
+ (name main)
+ (public_name twins)
+ (libraries cmdliner twins lwt.unix yojson))

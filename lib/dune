@@ -1,0 +1,5 @@
+(library
+ (name twins)
+ (public_name twins-cli.twins)
+ (wrapped false)
+ (libraries cohttp-lwt-unix lambdasoup lwt.unix uri yojson))
