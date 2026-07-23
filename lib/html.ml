@@ -15,11 +15,26 @@ let direct_cells row =
   |> Soup.to_list
 
 let cell_texts row = direct_cells row |> List.map node_text
-let rows table = table $$ "> tbody > tr" |> Soup.to_list
+
+(* CampusSquare sometimes omits <tbody>; prefer direct tbody rows, then
+   direct <tr> children. *)
+let rows table =
+  match table $$ "> tbody > tr" |> Soup.to_list with
+  | [] -> table $$ "> tr" |> Soup.to_list
+  | body_rows -> body_rows
 
 let table_by_id id soup =
   soup $$ "table" |> Soup.to_list
   |> List.find_opt (fun table -> Soup.attribute "id" table = Some id)
+
+(** First table with a row whose cell texts include every [headers] entry. *)
+let table_by_headers headers soup =
+  soup $$ "table" |> Soup.to_list
+  |> List.find_opt (fun table ->
+      rows table
+      |> List.exists (fun row ->
+          let cells = cell_texts row in
+          List.for_all (fun header -> List.mem header cells) headers))
 
 let form_by_name name soup =
   soup $$ "form" |> Soup.to_list

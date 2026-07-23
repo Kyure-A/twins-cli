@@ -121,6 +121,7 @@ val notices :
   (notice list, Error.t) result
 
 val notice_to_yojson : notice -> Yojson.Safe.t
+val parse_notices : Soup.soup Soup.node -> (notice list, Error.t) result
 
 val notice_detail :
   ?session_file:string ->

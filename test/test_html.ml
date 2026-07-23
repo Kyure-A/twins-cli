@@ -80,6 +80,41 @@ let test_grades () =
   | Ok grades ->
       Alcotest.failf "expected one grade, got %d" (List.length grades)
 
+let test_grades_without_table_id () =
+  (* Current CampusSquare markup dropped auto-table-* ids. *)
+  let soup =
+    parse
+      {|<table border="1" class="normal" width="100%">
+          <tr><th>No.</th><th>年度</th><th>学期</th><th>科目区分</th><th>科目番号</th><th>科目名</th><th>主担当教員</th><th>単位数</th><th>春学期</th><th>秋学期</th><th>評点</th><th>総合</th></tr>
+          <tr><td>1</td><td>2026</td><td>春学期</td><td>基礎科目</td><td>GA14111</td><td>知識情報概論</td><td>宇陀 則彦</td><td>1.0</td><td>-</td><td>-</td><td>100</td><td>A+</td></tr>
+        </table>|}
+  in
+  match Twins.parse_grades soup with
+  | Error error -> Alcotest.fail (Error.to_string error)
+  | Ok [ grade ] ->
+      Alcotest.(check string) "code" "GA14111" grade.code;
+      Alcotest.(check string) "total" "A+" grade.total
+  | Ok grades ->
+      Alcotest.failf "expected one grade, got %d" (List.length grades)
+
+let test_notices_without_table_id () =
+  let soup =
+    parse
+      {|<table border="1" class="normal" width="100%">
+          <tr><th>ジャンル</th><th>科目</th><th>担当者</th><th>表題</th><th>掲示期間</th><th>掲載日時</th></tr>
+          <tr><td>授業</td><td>メディア社会学</td><td>寺地 美奈子</td>
+            <td><a href="campussquare.do?seqNo=42">動画を修正しました</a></td>
+            <td>2026/07/13から</td><td>2026/07/13 11:10:25</td></tr>
+        </table>|}
+  in
+  match Twins.parse_notices soup with
+  | Error error -> Alcotest.fail (Error.to_string error)
+  | Ok [ notice ] ->
+      Alcotest.(check string) "course" "メディア社会学" notice.course;
+      Alcotest.(check string) "seq" "42" notice.seq
+  | Ok notices ->
+      Alcotest.failf "expected one notice, got %d" (List.length notices)
+
 let test_timetable () =
   let soup =
     parse
@@ -101,6 +136,34 @@ let test_timetable () =
       Alcotest.(check string) "code" "ABC123" entry.code
   | Ok entries ->
       Alcotest.failf "expected one entry, got %d" (List.length entries)
+
+let test_timetable_without_table_id () =
+  let soup =
+    parse
+      {|<table border="1" class="normal" width="100%"><tbody>
+          <tr><th></th><th>月曜日</th><th>火曜日</th><th>水曜日</th><th>木曜日</th><th>金曜日</th></tr>
+          <tr><th>1</th><td>ABC123<br>Test Course</td><td>未登録</td><td>未登録</td><td>未登録</td><td>未登録</td></tr>
+        </tbody></table>
+        <table border="1" class="normal" width="100%"><tbody>
+          <tr><th>曜日</th><th>時限</th><th>科目番号</th><th>科目名</th><th>担当教員名</th><th></th></tr>
+          <tr><td>その他</td><td>その他</td><td>XYZ789</td><td>Intensive Course</td><td>Test Teacher</td><td></td></tr>
+        </tbody></table>|}
+  in
+  let module_ =
+    match Twins.Module.of_string "autumn-a" with
+    | Ok module_ -> module_
+    | Error error -> Alcotest.fail (Error.to_string error)
+  in
+  match Twins.parse_timetable module_ soup with
+  | Error error -> Alcotest.fail (Error.to_string error)
+  | Ok [ regular; intensive ] ->
+      Alcotest.(check string) "module" "秋A" regular.module_label;
+      Alcotest.(check string) "day" "月曜日" regular.day;
+      Alcotest.(check string) "regular code" "ABC123" regular.code;
+      Alcotest.(check string) "intensive code" "XYZ789" intensive.code;
+      Alcotest.(check bool) "intensive" true intensive.intensive
+  | Ok entries ->
+      Alcotest.failf "expected two entries, got %d" (List.length entries)
 
 let check_invalid label = function
   | Error (Error.Invalid_argument _) -> ()
@@ -206,7 +269,13 @@ let () =
           Alcotest.test_case "form fields" `Quick test_form_fields;
           Alcotest.test_case "registrations" `Quick test_registrations;
           Alcotest.test_case "grades" `Quick test_grades;
+          Alcotest.test_case "grades without table id" `Quick
+            test_grades_without_table_id;
+          Alcotest.test_case "notices without table id" `Quick
+            test_notices_without_table_id;
           Alcotest.test_case "timetable" `Quick test_timetable;
+          Alcotest.test_case "timetable without table id" `Quick
+            test_timetable_without_table_id;
           Alcotest.test_case "domain types" `Quick test_domain_types;
           Alcotest.test_case "structured errors" `Quick test_structured_errors;
         ] );

@@ -6,6 +6,10 @@ val direct_cells : 'a Soup.node -> Soup.element Soup.node list
 val cell_texts : 'a Soup.node -> string list
 val rows : 'a Soup.node -> Soup.element Soup.node list
 val table_by_id : string -> 'a Soup.node -> Soup.element Soup.node option
+
+val table_by_headers :
+  string list -> 'a Soup.node -> Soup.element Soup.node option
+
 val form_by_name : string -> 'a Soup.node -> Soup.element Soup.node option
 val form_fields : 'a Soup.node -> field list
 val set_field : string -> string -> field list -> field list

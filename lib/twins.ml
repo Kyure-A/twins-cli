@@ -171,32 +171,40 @@ let grade_to_yojson grade =
     ]
 
 let parse_grades_exn soup =
+  (* Older TWINS markup used id="auto-table-4"; current pages use un-id'd
+     class="normal" tables identified by the grade header row. *)
   let table =
     match Html.table_by_id "auto-table-4" soup with
-    | Some table -> table
-    | None -> Internal_error.protocolf "TWINS grade table was not found"
+    | Some table -> Some table
+    | None ->
+        Html.table_by_headers
+          [ "No."; "年度"; "学期"; "科目区分"; "科目番号"; "科目名" ]
+          soup
   in
-  Html.rows table
-  |> List.filter_map (fun row ->
-      match Html.cell_texts row with
-      | number :: year :: term :: category :: code :: name :: instructor
-        :: credits :: spring :: autumn :: score :: total :: _
-        when number <> "No." ->
-          Some
-            {
-              year;
-              term;
-              category;
-              code;
-              name;
-              instructor;
-              credits;
-              spring;
-              autumn;
-              score;
-              total;
-            }
-      | _ -> None)
+  match table with
+  | None -> Internal_error.protocolf "TWINS grade table was not found"
+  | Some table ->
+      Html.rows table
+      |> List.filter_map (fun row ->
+          match Html.cell_texts row with
+          | number :: year :: term :: category :: code :: name :: instructor
+            :: credits :: spring :: autumn :: score :: total :: _
+            when number <> "No." ->
+              Some
+                {
+                  year;
+                  term;
+                  category;
+                  code;
+                  name;
+                  instructor;
+                  credits;
+                  spring;
+                  autumn;
+                  score;
+                  total;
+                }
+          | _ -> None)
 
 let grades_exn ?session_file () =
   with_session ?session_file (fun session ->
@@ -338,8 +346,16 @@ let rec combine_shortest left right =
 
 let parse_timetable_exn module_ soup =
   let regular =
-    match Html.table_by_id "auto-table-2-2" soup with
-    | None -> []
+    let table =
+      match Html.table_by_id "auto-table-2-2" soup with
+      | Some table -> Some table
+      | None ->
+          Html.table_by_headers
+            [ "月曜日"; "火曜日"; "水曜日"; "木曜日"; "金曜日" ]
+            soup
+    in
+    match table with
+    | None -> Internal_error.protocolf "TWINS timetable table was not found"
     | Some table -> (
         match Html.rows table with
         | [] -> []
@@ -373,7 +389,28 @@ let parse_timetable_exn module_ soup =
                               })))
   in
   let intensive =
-    match Html.table_by_id "auto-table-2-3" soup with
+    let table =
+      match Html.table_by_id "auto-table-2-3" soup with
+      | Some table -> Some table
+      | None ->
+          Html.table_by_headers
+            [ "曜日"; "時限"; "科目番号"; "科目名"; "担当教員名" ]
+            soup
+    in
+    let entry day period code name instructor =
+      {
+        module_label = Module.label module_;
+        day;
+        period;
+        code;
+        description =
+          [ code; name; instructor ]
+          |> List.filter (fun value -> value <> "")
+          |> String.concat " ";
+        intensive = true;
+      }
+    in
+    match table with
     | None -> []
     | Some table ->
         Html.rows table
@@ -381,18 +418,10 @@ let parse_timetable_exn module_ soup =
             match Html.cell_texts row with
             | day :: period :: code :: name :: _blank :: instructor :: _
               when code <> "科目番号" && code <> "" ->
-                Some
-                  {
-                    module_label = Module.label module_;
-                    day;
-                    period;
-                    code;
-                    description =
-                      [ code; name; instructor ]
-                      |> List.filter (fun value -> value <> "")
-                      |> String.concat " ";
-                    intensive = true;
-                  }
+                Some (entry day period code name instructor)
+            | day :: period :: code :: name :: instructor :: _
+              when code <> "科目番号" && code <> "" ->
+                Some (entry day period code name instructor)
             | _ -> None)
   in
   regular @ intensive
@@ -563,35 +592,45 @@ let notices_page session ~kind ~unread ~title =
   in
   post_page session (make_uri "campussquare.do") fields
 
-let parse_notices soup =
+let parse_notices_exn soup =
+  (* Older markup used id="auto-table-3"; current result tables are un-id'd
+     and start with ジャンル/科目/担当者/表題 headers. *)
   let table =
     match Html.table_by_id "auto-table-3" soup with
-    | Some table -> table
-    | None -> Internal_error.protocolf "TWINS notice result table was not found"
+    | Some table -> Some table
+    | None ->
+        Html.table_by_headers [ "ジャンル"; "科目"; "担当者"; "表題" ] soup
   in
-  Html.rows table
-  |> List.filter_map (fun row ->
-      match Html.cell_texts row with
-      | genre :: course :: instructor :: title :: period :: posted :: _
-        when genre <> "ジャンル" ->
-          let seq =
-            match
-              row |> Soup.select "a[href]" |> Soup.to_list
-              |> List.filter_map (fun anchor ->
-                  Option.bind
-                    (Soup.attribute "href" anchor)
-                    (Html.query_param "seqNo"))
-            with
-            | seq :: _ -> seq
-            | [] -> ""
-          in
-          Some { seq; genre; course; instructor; title; period; posted }
-      | _ -> None)
+  match table with
+  | None ->
+      Internal_error.protocolf "TWINS notice result table was not found"
+  | Some table ->
+      Html.rows table
+      |> List.filter_map (fun row ->
+          match Html.cell_texts row with
+          | genre :: course :: instructor :: title :: period :: posted :: _
+            when genre <> "ジャンル" ->
+              let seq =
+                match
+                  row |> Soup.select "a[href]" |> Soup.to_list
+                  |> List.filter_map (fun anchor ->
+                      Option.bind
+                        (Soup.attribute "href" anchor)
+                        (Html.query_param "seqNo"))
+                with
+                | seq :: _ -> seq
+                | [] -> ""
+              in
+              Some { seq; genre; course; instructor; title; period; posted }
+          | _ -> None)
+
+let parse_notices soup =
+  Internal_error.protect (fun () -> parse_notices_exn soup)
 
 let notices_exn ?session_file ~kind ~unread ~title ~limit () =
   with_session ?session_file (fun session ->
       notices_page session ~kind ~unread ~title |> fun page ->
-      parse_notices page.soup |> Util.take limit)
+      parse_notices_exn page.soup |> Util.take limit)
 
 let notices ?session_file ~kind ~unread ~title ~limit () =
   if limit < 0 then Error (Error.Invalid_argument "--limit は 0 以上で指定してください。")
