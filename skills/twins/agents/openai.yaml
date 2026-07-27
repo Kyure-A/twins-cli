@@ -1,0 +1,4 @@
+interface:
+  display_name: "TWINS CLI"
+  short_description: "筑波大学TWINSの時間割・成績・掲示・履修を安全に操作"
+  default_prompt: "Use $twins to check my current TWINS information safely."
