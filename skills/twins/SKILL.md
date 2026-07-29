@@ -1,41 +1,65 @@
 ---
 name: twins
-description: Operate Kyre's University of Tsukuba TWINS/CAMPUSSQUARE account through the local twins CLI. Use for TWINS authentication status, grades, timetables, class or general notices, unread notices, class cancellations, course registration or removal, and low-level TWINS menu flows. Trigger on TWINS, CAMPUSSQUARE, 筑波大学, 成績, 時間割, 掲示, 休講, and 履修登録 requests.
+description: Operate Kyre's University of Tsukuba TWINS/CAMPUSSQUARE account through the canonical GitHub flake for the unofficial twins CLI. Use for TWINS authentication status, grades, timetables, class or general notices, unread notices, class cancellations, course registration or removal, and low-level TWINS menu flows. Trigger on TWINS, CAMPUSSQUARE, 筑波大学, 成績, 時間割, 掲示, 休講, and 履修登録 requests.
 ---
 
 # TWINS
 
-Use the unofficial local `twins` CLI instead of navigating the TWINS web UI. Keep routine reads direct and make account-changing operations deliberate.
+Use the unofficial `twins` CLI from its canonical GitHub flake instead of navigating the TWINS web UI. Keep routine reads direct and make account-changing operations deliberate.
 
 ## Resolve the CLI
 
-Use `twins` when it is available on `PATH`. Otherwise run the flake at:
+Always invoke the canonical GitHub flake directly:
 
 ```text
-/Users/kyre/ghq/github.com/Kyure-A/twins-cli
+github:Kyure-A/twins-cli
+```
+
+Run every command in this form:
+
+```console
+nix run github:Kyure-A/twins-cli -- COMMAND ...
 ```
 
 For example:
 
 ```console
-nix run /Users/kyre/ghq/github.com/Kyure-A/twins-cli -- grades --json
+nix run github:Kyure-A/twins-cli -- grades --json
 ```
 
-Treat command examples below as arguments to whichever runner is available. Do not inspect the repository or reread its README for routine operations. Run `twins COMMAND --help=plain` only when an option is unclear or a command fails because the interface changed.
+Do not invoke a `twins` executable from `PATH` or a global installation, and do not run a local checkout. Treat command examples below as arguments following the runner's `--`. Do not inspect the repository or reread its README for routine operations. Run `nix run github:Kyure-A/twins-cli -- COMMAND --help=plain` only when an option is unclear or a command fails because the interface changed.
 
 ## Authenticate safely
 
-Run `auth status` before the first authenticated operation in a task.
-
-If logged out, ask the user to run `auth login -u UNIFIED_AUTH_ID` with the resolved runner in their own interactive terminal, then resume after they confirm. When `twins` is not installed, give this exact command:
+Before the first authenticated operation in a task, run:
 
 ```console
-nix run /Users/kyre/ghq/github.com/Kyure-A/twins-cli -- auth login -u UNIFIED_AUTH_ID
+nix run github:Kyure-A/twins-cli -- auth status
 ```
 
-Never request, accept, print, or store a TWINS password in chat. Never inspect or reveal the session-cookie file. Use the default session unless the user explicitly supplies a different `--session` path.
+If logged out or an authenticated command reports that login is required,
+recover the session through Kyre's existing Bitwarden Secrets Manager path:
 
-Run `auth logout` only when the user explicitly asks to remove the saved local session.
+```console
+cd /Users/kyre/ghq/github.com/Kyure-A/self
+nix develop -c npm run self -- secrets exec -- \
+  npm run self -- university login
+```
+
+Then rerun:
+
+```console
+nix run github:Kyure-A/twins-cli -- auth status
+```
+
+Do not ask Kyre to perform a manual login or provide credentials while this
+managed recovery path is available. If recovery fails, report the exact failing
+layer only after attempting it. Never request, accept, print, or store a TWINS
+password in chat. Never inspect or reveal the session-cookie file. Use the
+default session unless the user explicitly supplies a different `--session`
+path.
+
+Run `nix run github:Kyure-A/twins-cli -- auth logout` only when the user explicitly asks to remove the saved local session.
 
 ## Choose the operation
 
