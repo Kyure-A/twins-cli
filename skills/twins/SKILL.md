@@ -1,21 +1,16 @@
 ---
 name: twins
-description: Operate Kyre's University of Tsukuba TWINS/CAMPUSSQUARE account through the canonical GitHub flake for the unofficial twins CLI. Use for TWINS authentication status, grades, timetables, class or general notices, unread notices, class cancellations, course registration or removal, and low-level TWINS menu flows. Trigger on TWINS, CAMPUSSQUARE, 筑波大学, 成績, 時間割, 掲示, 休講, and 履修登録 requests.
+description: Operate a University of Tsukuba TWINS/CAMPUSSQUARE account through the twins-cli Nix flake. Use for TWINS authentication status, grades, timetables, class or general notices, unread notices, class cancellations, course registration or removal, and low-level TWINS menu flows. Trigger on TWINS, CAMPUSSQUARE, 筑波大学, 成績, 時間割, 掲示, 休講, and 履修登録 requests.
 ---
 
 # TWINS
 
-Use the unofficial `twins` CLI from its canonical GitHub flake instead of navigating the TWINS web UI. Keep routine reads direct and make account-changing operations deliberate.
+Use the unofficial `twins` CLI instead of navigating the TWINS web UI. Keep
+routine reads direct and make account-changing operations deliberate.
 
 ## Resolve the CLI
 
-Always invoke the canonical GitHub flake directly:
-
-```text
-github:Kyure-A/twins-cli
-```
-
-Run every command in this form:
+Run every command as:
 
 ```console
 nix run github:Kyure-A/twins-cli -- COMMAND ...
@@ -27,39 +22,44 @@ For example:
 nix run github:Kyure-A/twins-cli -- grades --json
 ```
 
-Do not invoke a `twins` executable from `PATH` or a global installation, and do not run a local checkout. Treat command examples below as arguments following the runner's `--`. Do not inspect the repository or reread its README for routine operations. Run `nix run github:Kyure-A/twins-cli -- COMMAND --help=plain` only when an option is unclear or a command fails because the interface changed.
+Command examples below are the arguments after the runner's `--`. A `twins`
+binary already on `PATH` (for example from `nix profile install` or a build of
+this repository) is an acceptable substitute only when `twins --version`
+matches the flake. If Nix is unavailable and no matching binary exists, report
+that blocker instead of guessing at another tool.
+
+Do not inspect the repository or reread its README for routine operations.
+Run `COMMAND --help=plain` only when an option is unclear or a command fails
+because the interface changed.
 
 ## Authenticate safely
 
-Before the first authenticated operation in a task, run:
+Before the first authenticated operation in a task, run `auth status`. If
+logged out, or an authenticated command reports that login is required, obtain
+a fresh session with `auth login`:
 
-```console
-nix run github:Kyure-A/twins-cli -- auth status
-```
+- Interactive terminal: `auth login -u UNIFIED_AUTH_ID` prompts for the
+  password on a hidden prompt.
+- Non-interactive: set `TWINS_USERNAME` and pipe the password from a secret
+  store into `auth login --password-stdin` (`TWINS_PASSWORD` is also
+  honored by the CLI).
+- Use a different session file only when the user asks, via `--session FILE`
+  or `TWINS_SESSION`.
 
-If logged out or an authenticated command reports that login is required,
-recover the session through Kyre's existing Bitwarden Secrets Manager path:
+Then rerun `auth status` and resume the original request.
 
-```console
-cd /Users/kyre/ghq/github.com/Kyure-A/self
-nix develop -c npm run self -- secrets exec -- \
-  npm run self -- university login
-```
+- Never request, accept, echo, or store a TWINS password in chat, and never
+  put one in a shell argument. Let the user's secret store or hidden prompt
+  supply it.
+- Never inspect or reveal the session cookie file. The CLI stores only session
+  cookies under `$XDG_STATE_HOME/twins-cli/session` or
+  `~/.local/state/twins-cli/session`.
+- If login fails, report the exact failing layer (Nix, network, unified
+  authentication, TWINS). Do not fall back to browser automation unless the
+  user asks for that expansion.
 
-Then rerun:
-
-```console
-nix run github:Kyure-A/twins-cli -- auth status
-```
-
-Do not ask Kyre to perform a manual login or provide credentials while this
-managed recovery path is available. If recovery fails, report the exact failing
-layer only after attempting it. Never request, accept, print, or store a TWINS
-password in chat. Never inspect or reveal the session-cookie file. Use the
-default session unless the user explicitly supplies a different `--session`
-path.
-
-Run `nix run github:Kyure-A/twins-cli -- auth logout` only when the user explicitly asks to remove the saved local session.
+Run `auth logout` only when the user explicitly asks to remove the saved local
+session.
 
 ## Choose the operation
 
