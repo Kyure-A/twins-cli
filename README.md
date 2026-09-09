@@ -9,6 +9,7 @@ as the web interface; it does not use an official API.
 - Session login, status, and logout
 - Grades and timetables in TSV or JSON
 - Course registration and removal
+- Lottery pre-registration: groups, course preferences, registration, and inquiry
 - Class and general notices
 - Class cancellation lookup
 - Low-level access to known TWINS menu flows
@@ -72,6 +73,27 @@ Registration changes require confirmation. Pass `-y` or `--yes` only when the
 operation has already been reviewed. Valid module names are `spring-a`,
 `spring-b`, `spring-c`, `summer`, `autumn-a`, `autumn-b`, `autumn-c`, and
 `spring-break`.
+
+### Lottery pre-registration
+
+Pre-registration records preferences for the university lottery; it does not
+confirm enrollment. Use the group ID or exact name returned by `groups`, then
+check the courses and saved preferences:
+
+```console
+twins pre-registration groups --module autumn-a --json
+twins pre-registration courses --module autumn-a --group GROUP_ID --json
+twins pre-registration add COURSE_CODE --module autumn-a --group GROUP_ID --rank 1
+twins pre-registration list --json
+```
+
+`add` follows the current category and group links, changes only the requested
+course's rank, checks the confirmation page, submits once, and fetches a fresh
+inquiry. Existing preferences in the group are preserved. Rank conflicts,
+closed groups, malformed forms, and unexpected confirmation contents fail
+without submitting. An already-saved matching preference is verified without
+resubmitting. After an ambiguous network failure, inspect `list` before retrying.
+The `--yes` flag skips the CLI prompt when the specific operation is authorized.
 
 Use `twins menu` to list known flows. The `raw` command can open one and
 optionally submit a form event:

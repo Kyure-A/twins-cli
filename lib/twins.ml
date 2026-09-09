@@ -785,3 +785,62 @@ let raw_exn ?session_file ~flow ~form_name ~event ~fields () =
 let raw ?session_file ~flow ~form_name ~event ~fields () =
   Internal_error.protect (fun () ->
       raw_exn ?session_file ~flow ~form_name ~event ~fields ())
+
+let pre_registration_io session =
+  let open_flow flow = (start_flow session flow).soup in
+  let get href =
+    let uri = absolute_uri (make_uri "campussquare.do") href in
+    if
+      Uri.scheme uri <> Some "https"
+      || Uri.host uri <> Some host
+      || Uri.path uri <> campus_path ^ "campussquare.do"
+    then Internal_error.protocolf "Unexpected pre-registration link destination";
+    (get_page session uri).soup
+  in
+  let post soup event replacements =
+    let form =
+      match Html.form_by_name "InputForm" soup with
+      | Some form when Soup.attribute "id" form = Some "rishuYobiEntryForm" ->
+          form
+      | _ -> Internal_error.protocolf "Missing pre-registration form"
+    in
+    let fields =
+      Html.form_fields form
+      |> Html.set_fields (("_eventId", event) :: replacements)
+    in
+    (post_page session (make_uri "campussquare.do") fields).soup
+  in
+  (open_flow, get, post)
+
+let pre_registration_list ?session_file () =
+  Internal_error.protect (fun () ->
+      with_session ?session_file (fun session ->
+          (start_flow session "RSW0001400-flow").soup
+          |> Pre_registration.inquiry))
+
+let pre_registration_groups ?session_file ~module_ () =
+  Internal_error.protect (fun () ->
+      with_session ?session_file (fun session ->
+          let open_flow, get, _ = pre_registration_io session in
+          Pre_registration.group_page ~open_flow ~get
+            ~category:(Module.label module_ ^ "開始")
+          |> Pre_registration.links ~event:"input" ~key:"yobiKamokuKubunCode"))
+
+let pre_registration_courses ?session_file ~module_ ~group () =
+  Internal_error.protect (fun () ->
+      with_session ?session_file (fun session ->
+          let open_flow, get, _ = pre_registration_io session in
+          Pre_registration.input_page ~open_flow ~get
+            ~category:(Module.label module_ ^ "開始")
+            ~group
+          |> Pre_registration.input_courses))
+
+let pre_register ?session_file ~module_ ~group ~code ~rank () =
+  if rank < 1 then Error (Error.Invalid_argument "--rank must be positive")
+  else
+    Internal_error.protect (fun () ->
+        with_session ?session_file (fun session ->
+            let open_flow, get, post = pre_registration_io session in
+            Pre_registration.add ~open_flow ~get ~post
+              ~category:(Module.label module_ ^ "開始")
+              ~group ~code ~rank))

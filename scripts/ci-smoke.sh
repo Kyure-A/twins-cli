@@ -62,3 +62,18 @@ test "$invalid_period_status" -eq 1
 grep -q -- '--period は 1 から 9' <<<"$invalid_period_output"
 test "$invalid_date_status" -eq 1
 grep -q 'date must use YYYY-MM-DD: "2025-02-29"' <<<"$invalid_date_output"
+
+pre_help=$("${cli[@]}" pre-registration add --help=plain)
+grep -q -- '--group=ID_OR_NAME' <<<"$pre_help"
+grep -q -- '--rank=N' <<<"$pre_help"
+set +e
+pre_cancel=$(printf 'n\n' | "${cli[@]}" pre-registration add TEST000 --module autumn-a --group test --session "$session_file" 2>&1)
+pre_cancel_status=$?
+pre_invalid=$("${cli[@]}" pre-registration add TEST000 --module autumn-a --group test --rank 0 --yes --session "$session_file" 2>&1)
+pre_invalid_status=$?
+set -e
+test "$pre_cancel_status" -eq 1
+grep -q '事前登録を中止しました' <<<"$pre_cancel"
+test "$pre_invalid_status" -eq 1
+grep -q -- '--rank must be positive' <<<"$pre_invalid"
+test ! -e "$session_file"

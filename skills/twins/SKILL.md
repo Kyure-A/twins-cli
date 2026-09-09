@@ -109,6 +109,25 @@ Never add `--yes` before confirmation. Never add `--force-limit` preemptively. I
 
 After a successful change, report the exact CLI result and advise verifying it in the official TWINS interface. If a mutation times out or returns an ambiguous result, do not retry automatically; check current state or ask the user to verify it first.
 
+## Lottery pre-registration
+
+Use `pre-registration`, not ordinary `registration add`, for 事前登録対象 courses:
+
+1. `pre-registration groups --module MODULE --json` lists currently open groups.
+2. `pre-registration courses --module MODULE --group ID_OR_NAME --json` shows
+   the group's courses, current ranks, capacity, and first-choice counts.
+3. Resolve the exact course, group, and rank from the live results. Once the user
+   authorizes that preference, run `pre-registration add COURSE_CODE --module
+   MODULE --group ID_OR_NAME --rank N --yes --json`.
+4. `pre-registration list --json` returns the stored preferences. The add command
+   also re-fetches this inquiry before reporting success.
+
+Preferences in other courses are preserved; rank collisions fail rather than
+reordering them. A matching existing preference is a verified no-op. Do not
+interpret `pre_registered` as confirmed enrollment. If a write fails ambiguously,
+read the inquiry before retrying. Category/group identifiers must come from live
+links; never infer them from a course number or weekday.
+
 ## Use raw flows sparingly
 
 Prefer a dedicated command whenever one exists. Use `raw MENU_OR_FLOW` without `--event` only for a requested low-level read.

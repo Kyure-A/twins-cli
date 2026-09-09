@@ -270,6 +270,111 @@ let registration_command =
     (Cmd.info "registration" ~doc:"履修登録を管理します。")
     [ register_command; unregister_command ]
 
+let print_pre_courses json courses =
+  if json then
+    print_json (`List (List.map Pre_registration.course_to_yojson courses))
+  else
+    List.iter
+      (fun (c : Pre_registration.course) ->
+        print_tsv
+          [
+            c.code;
+            c.name;
+            Option.fold ~none:"" ~some:string_of_int c.rank;
+            c.capacity;
+            c.first_choices;
+          ])
+      courses
+
+let pre_registration_command =
+  let group =
+    Arg.(
+      required
+      & opt (some string) None
+      & info [ "group" ] ~docv:"ID_OR_NAME" ~doc:"groups で確認した科目グループ ID または名前。")
+  in
+  let list_command =
+    let execute session_file json =
+      run (fun () ->
+          Twins.pre_registration_list ?session_file ()
+          |> unwrap |> print_pre_courses json)
+    in
+    Cmd.v
+      (Cmd.info "list" ~doc:"保存済みの事前登録希望を照会します（履修確定ではありません）。")
+      Term.(const execute $ session $ json)
+  in
+  let groups_command =
+    let execute session_file module_slug json =
+      run (fun () ->
+          let module_ = Twins.Module.of_string module_slug |> unwrap in
+          let groups =
+            Twins.pre_registration_groups ?session_file ~module_ () |> unwrap
+          in
+          if json then
+            print_json (`List (List.map Pre_registration.link_to_yojson groups))
+          else
+            List.iter
+              (fun (g : Pre_registration.link) ->
+                print_tsv [ g.id; g.name; g.status ])
+              groups)
+    in
+    Cmd.v
+      (Cmd.info "groups" ~doc:"受付中の科目グループを表示します。")
+      Term.(const execute $ session $ module_slug $ json)
+  in
+  let courses_command =
+    let execute session_file module_slug group json =
+      run (fun () ->
+          let module_ = Twins.Module.of_string module_slug |> unwrap in
+          Twins.pre_registration_courses ?session_file ~module_ ~group ()
+          |> unwrap |> print_pre_courses json)
+    in
+    Cmd.v
+      (Cmd.info "courses" ~doc:"グループの科目・希望順位・定員を表示します。")
+      Term.(const execute $ session $ module_slug $ group $ json)
+  in
+  let add_command =
+    let rank =
+      Arg.(
+        value & opt int 1
+        & info [ "rank" ] ~docv:"N" ~doc:"希望順位（既定は1）。既存の他科目の順位は保持します。")
+    in
+    let execute session_file module_slug group rank yes json code =
+      run (fun () ->
+          let module_ = Twins.Module.of_string module_slug |> unwrap in
+          if rank < 1 then
+            raise (Cli_error (Error.Invalid_argument "--rank must be positive"));
+          if
+            not
+              (confirm yes
+                 (Printf.sprintf "%s / %s: %s を第%d希望で事前登録します。"
+                    (Twins.Module.label module_)
+                    group code rank))
+          then raise (Cli_error (Error.Cancelled "事前登録を中止しました。"));
+          let result =
+            Twins.pre_register ?session_file ~module_ ~group ~rank ~code ()
+            |> unwrap
+          in
+          if json then
+            print_json
+              (`Assoc
+                 [
+                   ("status", `String "pre_registered");
+                   ("enrollment_confirmed", `Bool false);
+                   ("course", Pre_registration.course_to_yojson result);
+                 ])
+          else Printf.printf "%s を第%d希望で事前登録し、照会で確認しました（履修確定前）。\n" code rank)
+    in
+    Cmd.v
+      (Cmd.info "add" ~doc:"1科目を事前登録し、新しい照会で保存を確認します。")
+      Term.(
+        const execute $ session $ module_slug $ group $ rank $ yes $ json
+        $ course_code)
+  in
+  Cmd.group
+    (Cmd.info "pre-registration" ~doc:"抽選対象科目の事前登録を管理します。")
+    [ list_command; groups_command; courses_command; add_command ]
+
 let notice_kind =
   let choices =
     Twins.Notice_kind.all
@@ -418,6 +523,7 @@ let command =
       grades_command;
       timetable_command;
       registration_command;
+      pre_registration_command;
       notices_command;
       notice_command;
       cancellations_command;

@@ -1,0 +1,77 @@
+<article>登録は完了していません<form id="rishuYobiEntryForm" name="InputForm" method="post" action="/campusweb/campussquare.do" onsubmit="check(true)">
+
+<font color="red" size="+1"><b></b></font>
+
+  <input type="hidden" name="_eventId">
+  <input type="hidden" name="_flowExecutionKey" value="fixture-key">
+  <p><b><font color="red">※ 「登録」ボタンを押すまで、登録は完了していません ※</font><br>
+  <br>科目・希望順位に間違いがなければ「登録」ボタンを押してください<br>
+        変更する場合は「戻る」ボタンで事前登録画面へ戻ってください</b></p>
+
+  <p><b>秋A随時(TEST001)</b></p>
+
+  <!-- 優先順位設定確認一覧 -->
+  <table border="1" cellspacing="0" cellpadding="3" class="normal">
+    <tr>
+      <th width="40" class="normal">希望<br>順位</th>
+      <th width="60" class="normal">科目番号</th>
+      <th width="120" class="normal">科目名 </th>
+      <th width="120" class="normal">主担当教員</th>
+      <th width="60" class="normal">曜時限</th>
+      <th width="40" class="normal">定員</th>
+      <th width="55" class="normal">第1希望<br>人数</th>
+      <th width="120" class="normal">備考</th>
+    </tr>
+
+
+      <!-- チェックエラーがあった場合は背景色を変える -->
+
+
+          <!-- チェックエラーなし -->
+
+
+
+
+
+
+      <tr  onMouseOut="TRMouseOut(this)" onMouseOver="TRMouseOver(this)">
+        <td align="center">1</td>
+        <td align="center">TEST001</td>
+        <td>Example course</td>
+        <td>Example teacher</td>
+        <td>
+
+
+            他0
+
+            ,
+            他0
+
+            ,
+            他0
+
+            ,
+            他0
+
+        </td>
+        <td align="right">100</td>
+        <td align="right">13</td>
+        <td></td>
+      </tr>
+
+  </table>
+
+  <!-- エラー一覧 -->
+
+  <p></p>
+  <table border="0" cellspacing="0" cellpadding="5">
+    <tr>
+      <td><input type="button" value="　登　録　" onClick="insertSubmit()"></td>
+      <td>事前登録を行います</td>
+    </tr>
+    <tr>
+      <td><input type="button" value="　戻　る　" onClick="backSubmit()"></td>
+      <td>事前登録画面へ戻ります</td>
+    </tr>
+  </table>
+</form></article>

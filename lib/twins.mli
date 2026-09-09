@@ -147,3 +147,28 @@ val raw :
   fields:(string * string) list ->
   unit ->
   (string, Error.t) result
+
+val pre_registration_list :
+  ?session_file:string -> unit -> (Pre_registration.course list, Error.t) result
+
+val pre_registration_groups :
+  ?session_file:string ->
+  module_:Module.t ->
+  unit ->
+  (Pre_registration.link list, Error.t) result
+
+val pre_registration_courses :
+  ?session_file:string ->
+  module_:Module.t ->
+  group:string ->
+  unit ->
+  (Pre_registration.course list, Error.t) result
+
+val pre_register :
+  ?session_file:string ->
+  module_:Module.t ->
+  group:string ->
+  code:string ->
+  rank:int ->
+  unit ->
+  (Pre_registration.course, Error.t) result

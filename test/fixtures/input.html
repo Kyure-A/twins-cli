@@ -1,0 +1,72 @@
+<form id="rishuYobiEntryForm" name="InputForm" method="post" action="/campusweb/campussquare.do" onsubmit="check(true)">
+
+
+
+  <input type="hidden" name="_eventId">
+  <input type="hidden" name="_flowExecutionKey" value="fixture-key">
+  <table border="1" cellspacing="0" cellpadding="3" class="normal">
+    <tr>
+      <th width="40" class="normal">希望<br>順位</th>
+      <th width="60" class="normal">科目番号</th>
+      <th width="120" class="normal">科目名 </th>
+      <th width="120" class="normal">主担当教員</th>
+      <th width="60" class="normal">曜時限</th>
+      <th width="40" class="normal">定員</th>
+      <th width="55" class="normal">第1希望<br>人数</th>
+      <th width="120" class="normal">備考</th>
+    </tr>
+
+
+        <input type="hidden" name="kamokuCnt" value="1">
+
+
+          <tr onMouseOut="TRMouseOut(this)" onMouseOver="TRMouseOver(this)">
+            <td align="center">
+              <input type="text" name="yusenJuni_1" value="" maxlength="1" size="2">
+              <input type="hidden" name="nendo_1" value="2026">
+              <input type="hidden" name="jikanwariShozokuCode_1" value="1F">
+              <input type="hidden" name="jikanwariCode_1" value="TEST001">
+            </td>
+            <td align="center">TEST001</td>
+            <td>Example course</td>
+            <td>Example teacher</td>
+            <td>
+
+
+                他0
+
+                ,
+                他0
+
+                ,
+                他0
+
+                ,
+                他0
+
+            </td>
+            <td align="right">100</td>
+            <td align="right">13</td>
+            <td></td>
+          </tr>
+
+
+
+
+  </table>
+  <p></p>
+  <table border="0" cellspacing="0" cellpadding="5">
+      <tr>
+        <td><input type="button" value="　確　認　" onClick="checkSubmit()"></td>
+        <td>入力内容をチェックし、事前登録画面へ移動します。</td>
+      </tr>
+      <tr>
+        <td><input type="button" value="　削　除　" onClick="deleteSubmit()"></td>
+        <td>この科目グループに登録されている事前登録情報を全て削除し、科目グループ選択画面に戻ります。</td>
+      </tr>
+      <tr>
+        <td><input type="button" value=" 　戻　る　" onClick="backSubmit()"></td>
+        <td>科目グループ選択画面に戻ります。</td>
+      </tr>
+  </table>
+</form>
