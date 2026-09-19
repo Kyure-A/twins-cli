@@ -26,8 +26,16 @@ let pagination_control node =
     |> List.exists (fun (name, values) ->
         let name = String.lowercase_ascii name in
         List.mem name
-          [ "page"; "pageno"; "pagenumber"; "pageindex"; "currentpage" ]
+          [
+            "page";
+            "pageno";
+            "pagenumber";
+            "pageindex";
+            "currentpage";
+            "_pagecount";
+          ]
         && List.exists (fun value -> int_of_string_opt value <> None) values
+        || name = "_eventid_paging"
         || name = "_eventid"
            && List.exists
                 (fun value ->

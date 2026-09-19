@@ -77,6 +77,14 @@ let test_unknown () =
     (collect
        [
          page (row "1")
+           "<a \
+            href='campussquare.do?_eventId_paging=&amp;_pageCount=2&amp;_displayCount=100'>2</a>";
+       ]);
+
+  check (Some "unsupported_pagination") 1 1
+    (collect
+       [
+         page (row "1")
            "<a onclick='unknownNext()' href='javascript:void(0)'>次へ</a>";
        ]);
   check (Some "unsupported_pagination") 1 1

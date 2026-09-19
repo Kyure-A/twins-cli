@@ -278,7 +278,14 @@ let structure soup =
                 if
                   List.mem
                     (String.lowercase_ascii name)
-                    [ "page"; "pageno"; "pagenumber"; "pageindex" ]
+                    [
+                      "page";
+                      "pageno";
+                      "pagenumber";
+                      "pageindex";
+                      "_pagecount";
+                      "_displaycount";
+                    ]
                 then
                   values
                   |> List.filter (fun value ->
@@ -318,6 +325,20 @@ let structure soup =
         `Assoc
           [
             ("tag", `String (Soup.name node));
+            ( "label_number",
+              match int_of_string_opt (node_text node) with
+              | Some number -> `Int number
+              | None -> `Null );
+            ( "next_caption",
+              `Bool
+                (Util.contains ~needle:"次" (node_text node)
+                || Util.contains ~needle:"next"
+                     (String.lowercase_ascii (node_text node))) );
+            ( "previous_caption",
+              `Bool
+                (Util.contains ~needle:"前" (node_text node)
+                || Util.contains ~needle:"prev"
+                     (String.lowercase_ascii (node_text node))) );
             ("has_onclick", `Bool (Soup.has_attribute "onclick" node));
             ( "javascript",
               `Bool
