@@ -30,6 +30,7 @@
 (test
  (name test_pagination)
  (modules test_pagination)
+ (deps (glob_files fixtures/notices-*.html))
  (libraries alcotest twins))
 
 (test

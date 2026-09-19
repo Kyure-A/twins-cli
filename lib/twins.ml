@@ -562,37 +562,62 @@ let notices_page session ~kind ~unread ~title =
   post_page session (make_uri "campussquare.do") fields
 
 let parse_notices_exn soup =
-  (* Older markup used id="auto-table-3"; current result tables are un-id'd
-     and start with ジャンル/科目/担当者/表題 headers. *)
-  let table =
-    match Html.table_by_id "auto-table-3" soup with
-    | Some table -> Some table
-    | None -> Html.table_by_headers [ "ジャンル"; "科目"; "担当者"; "表題" ] soup
-  in
+  (* Authenticated class listings have six columns; general listings have four.
+     Both put the header row in <thead>, separate from the data <tbody>. *)
+  let required = [ "ジャンル"; "表題"; "掲示期間"; "掲載日時" ] in
+  let table = Html.table_by_headers required soup in
   match table with
   | None -> Internal_error.protocolf "TWINS notice result table was not found"
   | Some table ->
-      Html.rows table
-      |> List.filter_map (fun row ->
-          match Html.cell_texts row with
-          | genre :: course :: instructor :: title :: period :: posted :: _
-            when genre <> "ジャンル" ->
-              let seq =
-                match
-                  row |> Soup.select "a[href]" |> Soup.to_list
-                  |> List.filter_map (fun anchor ->
-                      Option.bind
-                        (Soup.attribute "href" anchor)
-                        (Html.query_param "seqNo"))
-                with
-                | seq :: _ -> seq
-                | [] -> ""
-              in
-              if seq = "" then
+      let rows = Html.rows table in
+      let header =
+        List.find
+          (fun row ->
+            let cells = Html.cell_texts row in
+            List.for_all (fun label -> List.mem label cells) required)
+          rows
+      in
+      let labels = Html.cell_texts header in
+      let value label cells =
+        match List.find_index (( = ) label) labels with
+        | None -> ""
+        | Some index -> (
+            match List.nth_opt cells index with
+            | Some value -> value
+            | None ->
                 Internal_error.protocolf
-                  "TWINS notice row is missing its detail identifier";
-              Some { seq; genre; course; instructor; title; period; posted }
-          | _ -> None)
+                  "TWINS notice row has fewer columns than its header")
+      in
+      rows
+      |> List.filter_map (fun row ->
+          let cells = Html.cell_texts row in
+          if List.for_all (fun label -> List.mem label cells) required then None
+          else if cells = [] then None
+          else
+            let seq =
+              row |> Soup.select "a[href]" |> Soup.to_list
+              |> List.find_map (fun anchor ->
+                  Option.bind
+                    (Soup.attribute "href" anchor)
+                    (Html.query_param "seqNo"))
+            in
+            let seq =
+              match seq with
+              | Some value when value <> "" -> value
+              | _ ->
+                  Internal_error.protocolf
+                    "TWINS notice row is missing its detail identifier"
+            in
+            Some
+              {
+                seq;
+                genre = value "ジャンル" cells;
+                course = value "科目" cells;
+                instructor = value "担当者" cells;
+                title = value "表題" cells;
+                period = value "掲示期間" cells;
+                posted = value "掲載日時" cells;
+              })
 
 let parse_notices soup =
   Internal_error.protect (fun () -> parse_notices_exn soup)

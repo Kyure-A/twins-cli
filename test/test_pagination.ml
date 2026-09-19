@@ -125,6 +125,34 @@ let test_structure () =
   let table = Html.structure soup |> member "tables" |> to_list |> List.hd in
   Alcotest.(check int) "thead count" 1 (table |> member "thead_rows" |> to_int)
 
+let test_observed_tables () =
+  let fixture file =
+    let ch = open_in ("fixtures/" ^ file) in
+    let content =
+      Fun.protect
+        ~finally:(fun () -> close_in ch)
+        (fun () -> really_input_string ch (in_channel_length ch))
+    in
+    items (Soup.parse content)
+  in
+  let classes = fixture "notices-classes.html" in
+  let general = fixture "notices-general.html" in
+  Alcotest.(check (list string))
+    "class IDs and exact row count"
+    [ "FIXTURE001"; "FIXTURE002" ]
+    (List.map (fun (notice : Twins.notice) -> notice.seq) classes);
+  Alcotest.(check (list string))
+    "general IDs and exact row count"
+    [ "FIXTURE003"; "FIXTURE004" ]
+    (List.map (fun (notice : Twins.notice) -> notice.seq) general);
+  Alcotest.(check string)
+    "class course mapping" "Fixture course A" (List.hd classes).course;
+  Alcotest.(check string)
+    "class teacher mapping" "Fixture teacher A" (List.hd classes).instructor;
+  Alcotest.(check string) "general absent course" "" (List.hd general).course;
+  Alcotest.(check string)
+    "general title mapping" "Fixture general title A" (List.hd general).title
+
 let () =
   Alcotest.run "TWINS pagination"
     [
@@ -138,5 +166,7 @@ let () =
           Alcotest.test_case "empty vs malformed" `Quick test_empty_and_missing;
           Alcotest.test_case "redacted structural diagnostics" `Quick
             test_structure;
+          Alcotest.test_case "observed thead and general columns" `Quick
+            test_observed_tables;
         ] );
     ]

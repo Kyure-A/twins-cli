@@ -16,12 +16,16 @@ let direct_cells row =
 
 let cell_texts row = direct_cells row |> List.map node_text
 
-(* CampusSquare sometimes omits <tbody>; prefer direct tbody rows, then
-   direct <tr> children. *)
+(* Header rows may live in <thead> while records are in <tbody>. Preserve
+   their document order and still support older unsectioned tables. *)
 let rows table =
-  match table $$ "> tbody > tr" |> Soup.to_list with
-  | [] -> table $$ "> tr" |> Soup.to_list
-  | body_rows -> body_rows
+  let headers = table $$ "> thead > tr" |> Soup.to_list in
+  let body =
+    match table $$ "> tbody > tr" |> Soup.to_list with
+    | [] -> table $$ "> tr" |> Soup.to_list
+    | body_rows -> body_rows
+  in
+  headers @ body
 
 let table_by_id id soup =
   soup $$ "table" |> Soup.to_list
@@ -240,12 +244,27 @@ let structure soup =
   in
   let next_labels = [ "次"; "次へ"; "次ページ"; "次のページ"; "next"; ">"; ">>" ] in
   let controls =
-    [ "a"; "button"; "input[type='button']"; "input[type='submit']" ]
+    [
+      "a";
+      "button";
+      "input[type='button']";
+      "input[type='submit']";
+      "span[onclick]";
+    ]
     |> List.concat_map (fun selector ->
         Soup.select selector soup |> Soup.to_list)
     |> List.filter (fun node ->
         Soup.attribute "rel" node = Some "next"
         || List.mem (String.lowercase_ascii (node_text node)) next_labels
+        || List.exists
+             (fun attribute ->
+               Option.fold ~none:false
+                 ~some:(fun value ->
+                   Util.contains ~needle:"page" (String.lowercase_ascii value))
+                 (Soup.attribute attribute node))
+             [ "href"; "onclick" ]
+        || String.length (node_text node) <= 80
+           && Util.contains ~needle:"次" (node_text node)
         || Option.fold ~none:false
              ~some:(fun value -> List.mem value next_labels)
              (Soup.attribute "value" node))
