@@ -14,3 +14,25 @@
  (modules test_pre_registration)
  (deps (glob_files fixtures/*.html))
  (libraries alcotest twins))
+
+(test
+ (name test_security)
+ (modules test_security)
+ ; Keep production transport modules private while testing their real code.
+ (flags (:standard -I lib/.twins.objs/byte))
+ (preprocess (action (run cat %{input-file})))
+ (preprocessor_deps
+  ../lib/.twins.objs/byte/session.cmi
+  ../lib/.twins.objs/byte/http_client.cmi
+  ../lib/.twins.objs/byte/internal_error.cmi)
+ (libraries alcotest twins cohttp-lwt-unix lwt.unix))
+
+(test
+ (name test_pagination)
+ (modules test_pagination)
+ (libraries alcotest twins))
+
+(test
+ (name test_registration)
+ (modules test_registration)
+ (libraries alcotest twins))

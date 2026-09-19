@@ -45,6 +45,18 @@ cookies are saved, with file mode `0600`, under
 `$XDG_STATE_HOME/twins-cli/session` or `~/.local/state/twins-cli/session`.
 Override the location with `TWINS_SESSION` or `--session FILE`.
 
+Cookies retain their host/domain, path, Secure flag and expiry. Unscoped session
+files from older versions are no longer usable: `auth status` reports logged
+out, and `auth login` replaces the old file only after successful authentication.
+A failed login retains the existing file. Session writes are atomic and private.
+All requests and redirects stay on the TWINS HTTPS origin; cross-origin,
+non-HTTPS and nonstandard-port targets are rejected before credentials can be
+replayed. This matches the CLI's direct TWINS portal login flow.
+
+Each request, including its redirect chain and response body, has a 60-second
+timeout. Set `TWINS_HTTP_TIMEOUT` to 1..300 seconds to change it. A timed-out
+mutation is never retried automatically; inspect the current state first.
+
 For non-interactive use, `TWINS_USERNAME`, `TWINS_PASSWORD`, and
 `--password-stdin` are supported. Remove the local session with:
 
@@ -61,6 +73,7 @@ twins timetable --module autumn-a
 
 # Notices and cancellations
 twins notices --kind classes --unread --limit 20
+twins notices --kind classes --all --max-pages 20 --metadata --json
 twins notice --kind classes NOTICE_ID
 twins cancellations --from 2026-10-01 --to 2026-10-31
 
@@ -73,6 +86,32 @@ Registration changes require confirmation. Pass `-y` or `--yes` only when the
 operation has already been reviewed. Valid module names are `spring-a`,
 `spring-b`, `spring-c`, `summer`, `autumn-a`, `autumn-b`, `autumn-c`, and
 `spring-break`.
+
+`registration add` and `remove` query a fresh registration flow after submitting.
+Success requires the target course to be present/absent as requested and all
+other timetable entries and registration keys to be unchanged. A success-looking
+submission response is insufficient. Missing tables and mismatches fail with no
+automatic retry.
+
+### Notice pagination and completeness
+
+Notice searches follow explicit Next links without opening notice bodies. The
+item limit defaults to 50; `--all` removes that limit. `--max-pages` defaults to
+20 and accepts 1..100. Duplicate notice IDs are collapsed and loops are bounded.
+`notice ID` also searches up to 20 listing pages before opening only the requested
+body (opening it can mark it read).
+
+`--metadata` emits a JSON object with `items`, `completeness` (`complete` or
+`partial`), `pages_fetched`, and `reason` (`null`, `limit`, `page_limit`,
+`pagination_loop`, or `unsupported_pagination`). Without it, `--json` emits the
+notice array and partial coverage is reported on stderr. A missing result table
+or a notice row without an ID is an error, not a complete empty result.
+
+JavaScript-only or unrecognized pager controls are reported as partial; their
+form events are never guessed. There is currently no captured authenticated
+pager fixture, so this behavior is fixture-tested, not live-service verified.
+Use the metadata when deciding whether absent notices can be removed from a
+local mirror.
 
 ### Lottery pre-registration
 

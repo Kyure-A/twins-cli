@@ -56,50 +56,50 @@ let find_login_form soup =
       Soup.select_one "input[name='userName']" form <> None)
 
 let login_exn ?session_file ~username ~password () =
-  let session = Session.create ?path:session_file () in
-  let initial = Http_client.get session (make_uri "") in
-  Http_client.ensure_success initial;
-  let soup = Html.parse (Http_client.body initial) in
-  let form =
-    match find_login_form soup with
-    | Some form -> form
-    | None -> Internal_error.protocolf "TWINS login form was not found"
-  in
-  let portal_hash =
-    match Html.portal_hash soup with
-    | Some hash -> hash
-    | None -> Internal_error.protocolf "TWINS portal token was not found"
-  in
-  let fields =
-    Html.form_fields form
-    |> Html.set_fields
-         [
-           ("userName", username);
-           ("password", password);
-           ("action", "rwf");
-           ("tabId", "home");
-           ("page", "");
-           ("rwfHash", portal_hash);
-         ]
-  in
-  let result = Http_client.post_form session (make_uri "portal.do") fields in
-  Http_client.ensure_success result;
-  if not (Util.contains ~needle:"login ok." (Http_client.body result)) then (
-    Session.clear session;
-    let message =
-      let page = Html.parse (Http_client.body result) in
-      match Html.messages page with
-      | message :: _ -> message
-      | [] -> Html.article_text page
-    in
-    let suffix = if message = "" then "" else ": " ^ message in
-    Internal_error.protocolf "TWINS login failed%s" suffix);
-  let main =
-    Http_client.get session
-      (make_uri "portal.do" ~query:[ ("page", [ "main" ]) ])
-  in
-  ignore (checked_page ~session main);
-  Session.save session
+  Session.authenticate ?path:session_file (fun session ->
+      let initial = Http_client.get session (make_uri "") in
+      Http_client.ensure_success initial;
+      let soup = Html.parse (Http_client.body initial) in
+      let form =
+        match find_login_form soup with
+        | Some form -> form
+        | None -> Internal_error.protocolf "TWINS login form was not found"
+      in
+      let portal_hash =
+        match Html.portal_hash soup with
+        | Some hash -> hash
+        | None -> Internal_error.protocolf "TWINS portal token was not found"
+      in
+      let fields =
+        Html.form_fields form
+        |> Html.set_fields
+             [
+               ("userName", username);
+               ("password", password);
+               ("action", "rwf");
+               ("tabId", "home");
+               ("page", "");
+               ("rwfHash", portal_hash);
+             ]
+      in
+      let result =
+        Http_client.post_form session (make_uri "portal.do") fields
+      in
+      Http_client.ensure_success result;
+      (if not (Util.contains ~needle:"login ok." (Http_client.body result)) then
+         let message =
+           let page = Html.parse (Http_client.body result) in
+           match Html.messages page with
+           | message :: _ -> message
+           | [] -> Html.article_text page
+         in
+         let suffix = if message = "" then "" else ": " ^ message in
+         Internal_error.protocolf "TWINS login failed%s" suffix);
+      let main =
+        Http_client.get session
+          (make_uri "portal.do" ~query:[ ("page", [ "main" ]) ])
+      in
+      ignore (checked_page main))
 
 let login ?session_file ~username ~password () =
   Internal_error.protect (fun () ->
@@ -121,7 +121,7 @@ let logout ?session_file () =
 type status = { logged_in : bool; title : string }
 
 let status_exn ?session_file () =
-  let session = Session.load ?path:session_file () in
+  let session = Session.load ~allow_incompatible:true ?path:session_file () in
   if Session.is_empty session then { logged_in = false; title = "" }
   else
     let response =
@@ -177,9 +177,7 @@ let parse_grades_exn soup =
     match Html.table_by_id "auto-table-4" soup with
     | Some table -> Some table
     | None ->
-        Html.table_by_headers
-          [ "No."; "年度"; "学期"; "科目区分"; "科目番号"; "科目名" ]
-          soup
+        Html.table_by_headers [ "No."; "年度"; "学期"; "科目区分"; "科目番号"; "科目名" ] soup
   in
   match table with
   | None -> Internal_error.protocolf "TWINS grade table was not found"
@@ -349,10 +347,7 @@ let parse_timetable_exn module_ soup =
     let table =
       match Html.table_by_id "auto-table-2-2" soup with
       | Some table -> Some table
-      | None ->
-          Html.table_by_headers
-            [ "月曜日"; "火曜日"; "水曜日"; "木曜日"; "金曜日" ]
-            soup
+      | None -> Html.table_by_headers [ "月曜日"; "火曜日"; "水曜日"; "木曜日"; "金曜日" ] soup
     in
     match table with
     | None -> Internal_error.protocolf "TWINS timetable table was not found"
@@ -393,9 +388,7 @@ let parse_timetable_exn module_ soup =
       match Html.table_by_id "auto-table-2-3" soup with
       | Some table -> Some table
       | None ->
-          Html.table_by_headers
-            [ "曜日"; "時限"; "科目番号"; "科目名"; "担当教員名" ]
-            soup
+          Html.table_by_headers [ "曜日"; "時限"; "科目番号"; "科目名"; "担当教員名" ] soup
     in
     let entry day period code name instructor =
       {
@@ -437,102 +430,78 @@ let timetable ?session_file module_ =
 let parse_timetable module_ soup =
   Internal_error.protect (fun () -> parse_timetable_exn module_ soup)
 
-let registration_codes soup =
-  Html.registrations soup
-  |> List.map (fun (registration : Html.registration) -> registration.code)
-  |> Util.deduplicate
-
-let register_exn ?session_file ~module_ ~day ~period ~code ~force_limit () =
-  with_session ?session_file (fun session ->
-      let before = registration_page session module_ in
-      let before_codes = registration_codes before.soup in
-      if List.mem code before_codes then
-        Internal_error.protocolf "%s is already registered in %s" code
-          (Module.label module_);
-      let input =
-        post_event session before ~form_name:"InputForm" "input"
-          [
-            ("yobi", string_of_int (Day.to_int day));
-            ("jigen", string_of_int (Period.to_int period));
-          ]
-      in
-      let fields =
-        form_fields_by_name input "InputForm"
-        |> Html.set_fields [ ("_eventId", "insert"); ("jikanwariCode", code) ]
-      in
-      let result = post_page session (make_uri "campussquare.do") fields in
-      let result =
-        if
-          Util.contains ~needle:"kyoseiToroku"
-            (Http_client.body result.response)
-          && not (List.mem code (registration_codes result.soup))
-        then
-          if not force_limit then
-            Internal_error.protocolf
-              "registration requires overriding the annual credit limit; rerun \
-               with --force-limit if that is permitted"
-          else
-            post_event session result ~form_name:"InputForm"
-              "kyoseiTorokuGakusei" []
-        else result
-      in
-      let after_codes = registration_codes result.soup in
-      (if not (List.mem code after_codes) then
-         let messages = Html.messages result.soup |> String.concat "; " in
-         let suffix = if messages = "" then "" else ": " ^ messages in
-         Internal_error.protocolf "TWINS did not register %s%s" code suffix);
-      result)
+let registration_snapshot module_ page =
+  (* Require a recognizable timetable even when it contains no entries. Also
+     preserve locked courses without a DeleteCallA link and all deletion keys. *)
+  let timetable =
+    parse_timetable_exn module_ page.soup
+    |> List.map (fun (entry : timetable_entry) ->
+        Registration.
+          {
+            code = entry.code;
+            identity =
+              [
+                "timetable";
+                entry.module_label;
+                entry.day;
+                entry.period;
+                entry.description;
+                string_of_bool entry.intensive;
+              ];
+          })
+  in
+  let deletable =
+    Html.registrations page.soup
+    |> List.map (fun (entry : Html.registration) ->
+        Registration.
+          {
+            code = entry.code;
+            identity =
+              [
+                "deletable";
+                entry.year;
+                entry.department;
+                entry.day;
+                entry.period;
+              ];
+          })
+  in
+  timetable @ deletable
 
 let register ?session_file ~module_ ~day ~period ~code ~force_limit () =
   Internal_error.protect (fun () ->
-      ignore
-        (register_exn ?session_file ~module_ ~day ~period ~code ~force_limit ()))
-
-let unregister_exn ?session_file ~module_ ~code () =
-  with_session ?session_file (fun session ->
-      let before = registration_page session module_ in
-      let target =
-        Html.registrations before.soup
-        |> List.find_opt (fun (registration : Html.registration) ->
-            registration.code = code)
-      in
-      let target =
-        match target with
-        | Some target -> target
-        | None ->
-            Internal_error.protocolf
-              "%s is not deletable in %s (it may be unregistered or outside \
-               the registration period)"
-              code (Module.label module_)
-      in
-      let confirmation =
-        post_event session before ~form_name:"DeleteForm" "delete"
-          [
-            ("nendo", target.year);
-            ("jikanwariShozokuCode", target.department);
-            ("jikanwariCode", target.code);
-            ("yobi", target.day);
-            ("jigen", target.period);
-          ]
-      in
-      let confirmation_text = Html.article_text confirmation.soup in
-      if
-        not
-          (Util.contains ~needle:"以下の時間割を削除" confirmation_text
-          && Util.contains ~needle:code confirmation_text)
-      then
-        Internal_error.protocolf
-          "TWINS did not show the expected deletion confirmation";
-      let result =
-        post_event session confirmation ~form_name:"InputForm" "delete" []
-      in
-      if List.mem code (registration_codes result.soup) then
-        Internal_error.protocolf "TWINS still shows %s after deletion" code;
-      result)
+      with_session ?session_file (fun session ->
+          Registration.add
+            ~read:(fun () -> registration_page session module_)
+            ~snapshot:(registration_snapshot module_)
+            ~post:(fun page form_name event fields ->
+              post_event session page ~form_name event fields)
+            ~limited:(fun page ->
+              Util.contains ~needle:"kyoseiToroku"
+                (Http_client.body page.response)
+              && not
+                   (List.exists
+                      (fun (entry : Html.registration) -> entry.code = code)
+                      (Html.registrations page.soup)))
+            ~code
+            ~day:(string_of_int (Day.to_int day))
+            ~period:(string_of_int (Period.to_int period))
+            ~force_limit))
 
 let unregister ?session_file ~module_ ~code () =
   Internal_error.protect (fun () ->
-      ignore (unregister_exn ?session_file ~module_ ~code ()))
+      with_session ?session_file (fun session ->
+          Registration.remove
+            ~read:(fun () -> registration_page session module_)
+            ~snapshot:(registration_snapshot module_)
+            ~targets:(fun page -> Html.registrations page.soup)
+            ~post:(fun page form_name event fields ->
+              post_event session page ~form_name event fields)
+            ~confirmed:(fun page code ->
+              let text = Html.article_text page.soup in
+              Util.contains ~needle:"以下の時間割を削除" text
+              && Util.contains ~needle:code text)
+            ~code))
 
 type notice = {
   seq : string;
@@ -598,12 +567,10 @@ let parse_notices_exn soup =
   let table =
     match Html.table_by_id "auto-table-3" soup with
     | Some table -> Some table
-    | None ->
-        Html.table_by_headers [ "ジャンル"; "科目"; "担当者"; "表題" ] soup
+    | None -> Html.table_by_headers [ "ジャンル"; "科目"; "担当者"; "表題" ] soup
   in
   match table with
-  | None ->
-      Internal_error.protocolf "TWINS notice result table was not found"
+  | None -> Internal_error.protocolf "TWINS notice result table was not found"
   | Some table ->
       Html.rows table
       |> List.filter_map (fun row ->
@@ -621,41 +588,89 @@ let parse_notices_exn soup =
                 | seq :: _ -> seq
                 | [] -> ""
               in
+              if seq = "" then
+                Internal_error.protocolf
+                  "TWINS notice row is missing its detail identifier";
               Some { seq; genre; course; instructor; title; period; posted }
           | _ -> None)
 
 let parse_notices soup =
   Internal_error.protect (fun () -> parse_notices_exn soup)
 
-let notices_exn ?session_file ~kind ~unread ~title ~limit () =
-  with_session ?session_file (fun session ->
-      notices_page session ~kind ~unread ~title |> fun page ->
-      parse_notices_exn page.soup |> Util.take limit)
+type notice_result = notice Notice_pagination.result
 
-let notices ?session_file ~kind ~unread ~title ~limit () =
+let notice_result_to_yojson (result : notice_result) =
+  `Assoc
+    [
+      ("items", `List (List.map notice_to_yojson result.items));
+      ("completeness", `String result.completeness);
+      ("pages_fetched", `Int result.pages_fetched);
+      ( "reason",
+        Option.fold ~none:`Null
+          ~some:(fun reason -> `String reason)
+          result.reason );
+    ]
+
+let collect_notices session ~limit ~max_pages first =
+  Notice_pagination.collect
+    ~fetch:(fun page href ->
+      get_page session (absolute_uri (Http_client.uri page.response) href))
+    ~parse:(fun page -> parse_notices_exn page.soup)
+    ~next:(fun page -> Notice_pagination.next page.soup)
+    ~id:(fun notice -> notice.seq)
+    ~limit ~max_pages first
+
+let notices_with_metadata ?session_file ?(all = false) ?(max_pages = 20) ~kind
+    ~unread ~title ~limit () =
   if limit < 0 then Error (Error.Invalid_argument "--limit は 0 以上で指定してください。")
+  else if max_pages < 1 || max_pages > 100 then
+    Error (Error.Invalid_argument "--max-pages must be 1..100")
   else
     Internal_error.protect (fun () ->
-        notices_exn ?session_file ~kind ~unread ~title ~limit ())
+        with_session ?session_file (fun session ->
+            let page = notices_page session ~kind ~unread ~title in
+            collect_notices session
+              ~limit:(if all then None else Some limit)
+              ~max_pages page))
+
+let notices ?session_file ~kind ~unread ~title ~limit () =
+  notices_with_metadata ?session_file ~kind ~unread ~title ~limit ()
+  |> Result.map (fun result -> result.Notice_pagination.items)
 
 let notice_detail_exn ?session_file ~kind seq =
   with_session ?session_file (fun session ->
       let page = notices_page session ~kind ~unread:false ~title:"" in
-      let href =
-        page.soup |> Soup.select "a[href]" |> Soup.to_list
-        |> List.find_map (fun anchor ->
-            match Soup.attribute "href" anchor with
-            | Some href when Html.query_param "seqNo" href = Some seq ->
-                Some href
-            | _ -> None)
+      let rec find pages seen page =
+        let href =
+          page.soup |> Soup.select "a[href]" |> Soup.to_list
+          |> List.find_map (fun anchor ->
+              match Soup.attribute "href" anchor with
+              | Some href when Html.query_param "seqNo" href = Some seq ->
+                  Some href
+              | _ -> None)
+        in
+        match href with
+        | Some href ->
+            get_page session (absolute_uri (Http_client.uri page.response) href)
+            |> fun detail -> Html.article_text detail.soup
+        | None -> (
+            match Notice_pagination.next page.soup with
+            | Notice_pagination.Next href
+              when pages < 20 && not (List.mem href seen) ->
+                let next =
+                  get_page session
+                    (absolute_uri (Http_client.uri page.response) href)
+                in
+                find (pages + 1) (href :: seen) next
+            | Notice_pagination.End ->
+                Internal_error.protocolf "notice %s was not found" seq
+            | _ ->
+                Internal_error.protocolf
+                  "notice %s was not found before the pagination bound or an \
+                   unsupported pager"
+                  seq)
       in
-      match href with
-      | None ->
-          Internal_error.protocolf
-            "notice %s was not found in the current result set" seq
-      | Some href ->
-          get_page session (absolute_uri (Http_client.uri page.response) href)
-          |> fun detail -> Html.article_text detail.soup)
+      find 1 [] page)
 
 let notice_detail ?session_file ~kind seq =
   Internal_error.protect (fun () -> notice_detail_exn ?session_file ~kind seq)

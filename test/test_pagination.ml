@@ -1,0 +1,122 @@
+let parse = Soup.parse
+
+let page rows pager =
+  parse
+    ("<table><tr><th>ジャンル</th><th>科目</th><th>担当者</th><th>表題</th><th>掲示期間</th><th>掲載日時</th></tr>"
+   ^ rows ^ "</table>" ^ pager)
+
+let row id =
+  "<tr><td>fixture</td><td>Course</td><td>Teacher</td><td><a \
+   href='campussquare.do?seqNo=" ^ id ^ "'>Title " ^ id
+  ^ "</a></td><td>Term</td><td>2026-09-20</td></tr>"
+
+let next =
+  "<a rel='next' href='campussquare.do?_eventId=page&amp;pageNo=2'>次へ</a>"
+
+let last = "<span class='pager'><a aria-disabled='true'>次へ</a></span>"
+
+let items soup =
+  match Twins.parse_notices soup with
+  | Ok items -> items
+  | Error e -> Alcotest.fail (Error.to_string e)
+
+let collect ?(limit = None) ?(max_pages = 20) pages =
+  let pending = ref (List.tl pages) in
+  let fetch _ _ =
+    match !pending with
+    | [] -> Alcotest.fail "unexpected page request"
+    | page :: rest ->
+        pending := rest;
+        page
+  in
+  Notice_pagination.collect ~fetch ~parse:items ~next:Notice_pagination.next
+    ~id:(fun (notice : Twins.notice) -> notice.seq)
+    ~limit ~max_pages (List.hd pages)
+
+let check reason count pages result =
+  Alcotest.(check (option string))
+    "reason" reason result.Notice_pagination.reason;
+  Alcotest.(check string)
+    "completeness"
+    (if reason = None then "complete" else "partial")
+    result.completeness;
+  Alcotest.(check int) "items" count (List.length result.items);
+  Alcotest.(check int) "pages" pages result.pages_fetched
+
+let test_all () =
+  let result =
+    collect
+      [ page (row "1" ^ row "1" ^ row "2") next; page (row "2" ^ row "3") last ]
+  in
+  check None 3 2 result;
+  let json = Twins.notice_result_to_yojson result in
+  let open Yojson.Safe.Util in
+  Alcotest.(check string)
+    "metadata contract" "complete"
+    (json |> member "completeness" |> to_string);
+  Alcotest.(check int)
+    "JSON items" 3
+    (json |> member "items" |> to_list |> List.length)
+
+let test_limit () =
+  check (Some "limit") 1 1
+    (collect ~limit:(Some 1) [ page (row "1" ^ row "2") next ]);
+  check (Some "limit") 1 1 (collect ~limit:(Some 1) [ page (row "1") next ]);
+  check None 1 1 (collect ~limit:(Some 1) [ page (row "1") last ]);
+  check (Some "limit") 0 1 (collect ~limit:(Some 0) [ page (row "1") last ])
+
+let test_bounds () =
+  check (Some "page_limit") 1 1 (collect ~max_pages:1 [ page (row "1") next ]);
+  check (Some "pagination_loop") 1 2
+    (collect [ page (row "1") next; page (row "1") next ]);
+  check (Some "pagination_loop") 2 2
+    (collect [ page (row "1") next; page (row "2") next ])
+
+let test_unknown () =
+  check (Some "unsupported_pagination") 1 1
+    (collect
+       [
+         page (row "1")
+           "<a onclick='unknownNext()' href='javascript:void(0)'>次へ</a>";
+       ]);
+  check (Some "unsupported_pagination") 1 1
+    (collect
+       [
+         page (row "1")
+           "<select \
+            name='pageNumber'><option>1</option><option>2</option></select>";
+       ]);
+  check (Some "unsupported_pagination") 1 1
+    (collect
+       [
+         page (row "1") "<div class='pagination'><a href='?page=2'>2</a></div>";
+       ])
+
+let test_empty_and_missing () =
+  check None 0 1 (collect [ page "" "<a href='portal.do?page=main'>Home</a>" ]);
+  (match Twins.parse_notices (parse "<h1>Maintenance</h1>") with
+  | Error _ -> ()
+  | Ok _ -> Alcotest.fail "missing table must fail");
+  match
+    Twins.parse_notices
+      (page
+         "<tr><td>Genre</td><td>Course</td><td>Teacher</td><td>Missing \
+          ID</td><td>Term</td><td>Date</td></tr>"
+         "")
+  with
+  | Error _ -> ()
+  | Ok _ -> Alcotest.fail "unidentified row must fail"
+
+let () =
+  Alcotest.run "TWINS pagination"
+    [
+      ( "notices",
+        [
+          Alcotest.test_case "multiple pages, dedup and metadata" `Quick
+            test_all;
+          Alcotest.test_case "item limits" `Quick test_limit;
+          Alcotest.test_case "page limits and cycles" `Quick test_bounds;
+          Alcotest.test_case "unknown pagers are partial" `Quick test_unknown;
+          Alcotest.test_case "empty vs malformed" `Quick test_empty_and_missing;
+        ] );
+    ]

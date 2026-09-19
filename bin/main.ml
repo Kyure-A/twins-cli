@@ -244,7 +244,7 @@ let register_command =
           raise (Cli_error (Error.Cancelled "登録を中止しました。"));
         Twins.register ?session_file ~module_ ~day ~period ~code ~force_limit ()
         |> unwrap;
-        Printf.printf "%s を履修登録しました。\n" code)
+        Printf.printf "%s を履修登録し、再照会で確認しました。\n" code)
   in
   Cmd.v
     (Cmd.info "add" ~doc:"科目を履修登録します。")
@@ -259,7 +259,7 @@ let unregister_command =
         if not (confirm yes (Printf.sprintf "%s の履修登録を削除します。" code)) then
           raise (Cli_error (Error.Cancelled "削除を中止しました。"));
         Twins.unregister ?session_file ~module_ ~code () |> unwrap;
-        Printf.printf "%s の履修登録を削除しました。\n" code)
+        Printf.printf "%s の履修登録を削除し、再照会で確認しました。\n" code)
   in
   Cmd.v
     (Cmd.info "remove" ~doc:"科目の履修登録を削除します。")
@@ -393,12 +393,31 @@ let notices_command =
       value & opt string "" & info [ "title" ] ~docv:"TEXT" ~doc:"表題で絞り込みます。")
   in
   let limit = Arg.(value & opt int 50 & info [ "limit" ] ~docv:"N") in
-  let execute session_file kind unread title limit json =
+  let all = Arg.(value & flag & info [ "all" ] ~doc:"件数上限を外し、最大ページ数まで巡回します。") in
+  let max_pages =
+    Arg.(
+      value & opt int 20
+      & info [ "max-pages" ] ~docv:"N" ~doc:"取得ページ上限（1..100、既定20）。")
+  in
+  let metadata =
+    Arg.(
+      value & flag & info [ "metadata" ] ~doc:"items と取得範囲の完全性を含む JSON を出力します。")
+  in
+  let execute session_file kind unread title limit all max_pages metadata json =
     run (fun () ->
-        let notices =
-          Twins.notices ?session_file ~kind ~unread ~title ~limit () |> unwrap
+        let result =
+          Twins.notices_with_metadata ?session_file ~all ~max_pages ~kind
+            ~unread ~title ~limit ()
+          |> unwrap
         in
-        if json then
+        let notices = result.items in
+        if result.completeness <> "complete" && not metadata then
+          Printf.eprintf
+            "twins: notice results are partial (%s); use --metadata for \
+             coverage details\n"
+            (Option.value ~default:"unknown" result.reason);
+        if metadata then print_json (Twins.notice_result_to_yojson result)
+        else if json then
           print_json (`List (List.map Twins.notice_to_yojson notices))
         else (
           print_tsv [ "ID"; "ジャンル"; "科目"; "担当者"; "表題"; "掲示期間"; "掲載日時" ];
@@ -418,7 +437,9 @@ let notices_command =
   in
   Cmd.v
     (Cmd.info "notices" ~doc:"授業・一般掲示を検索します。")
-    Term.(const execute $ session $ notice_kind $ unread $ title $ limit $ json)
+    Term.(
+      const execute $ session $ notice_kind $ unread $ title $ limit $ all
+      $ max_pages $ metadata $ json)
 
 let notice_command =
   let seq = Arg.(required & pos 0 (some string) None & info [] ~docv:"ID") in

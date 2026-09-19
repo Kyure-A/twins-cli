@@ -51,6 +51,8 @@ Then rerun `auth status` and resume the original request.
 - Never request, accept, echo, or store a TWINS password in chat, and never
   put one in a shell argument. Let the user's secret store or hidden prompt
   supply it.
+- Legacy unscoped sessions appear logged out; reauthenticate through the normal
+  login flow. A failed login leaves the prior file untouched.
 - Never inspect or reveal the session cookie file. The CLI stores only session
   cookies under `$XDG_STATE_HOME/twins-cli/session` or
   `~/.local/state/twins-cli/session`.
@@ -69,6 +71,9 @@ Prefer JSON whenever the command supports it:
 - Get a timetable with `timetable --module MODULE --json`.
 - List notices with `notices --kind classes|general --json`.
 - Filter notices with `--unread`, `--title TEXT`, or `--limit N`.
+- For complete mirror reads use `notices --all --max-pages 20 --metadata --json`;
+  inspect `completeness` and `reason`. Never treat a partial result as a complete
+  replacement. Unknown JavaScript pagers are reported as partial.
 - Read one notice with `notice --kind classes|general ID`.
 - Get cancellations with `cancellations --from YYYY-MM-DD --to YYYY-MM-DD`; add `--all` only when the user wants unregistered courses too.
 - List known low-level flows with `menu --json`.
@@ -107,7 +112,8 @@ Before removing a course:
 
 Never add `--yes` before confirmation. Never add `--force-limit` preemptively. If TWINS reports an annual credit-limit override, show the result and obtain separate confirmation before retrying with `--force-limit`.
 
-After a successful change, report the exact CLI result and advise verifying it in the official TWINS interface. If a mutation times out or returns an ambiguous result, do not retry automatically; check current state or ask the user to verify it first.
+After a successful change, report the exact CLI result. Normal registration
+changes are verified by a fresh query, including preservation of other courses. If a mutation times out or returns an ambiguous result, do not retry automatically; check current state or ask the user to verify it first.
 
 ## Lottery pre-registration
 

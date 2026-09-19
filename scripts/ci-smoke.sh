@@ -77,3 +77,23 @@ grep -q '事前登録を中止しました' <<<"$pre_cancel"
 test "$pre_invalid_status" -eq 1
 grep -q -- '--rank must be positive' <<<"$pre_invalid"
 test ! -e "$session_file"
+
+notice_help=$("${cli[@]}" notices --help=plain)
+grep -q -- '--all' <<<"$notice_help"
+grep -q -- '--metadata' <<<"$notice_help"
+grep -q -- '--max-pages=N' <<<"$notice_help"
+
+set +e
+invalid_pages=$("${cli[@]}" notices --max-pages 0 --metadata --json --session "$session_file" 2>&1)
+invalid_pages_status=$?
+set -e
+test "$invalid_pages_status" -eq 1
+grep -q -- '--max-pages must be 1..100' <<<"$invalid_pages"
+test ! -e "$session_file"
+
+# Synthetic legacy cookies must be retained, while status enables managed login.
+printf '# legacy fixture\nsid\tfake-fixture\n' > "$session_file"
+cp "$session_file" "$session_file.before"
+status_output=$("${cli[@]}" auth status --session "$session_file")
+test "$status_output" = "logged out"
+cmp "$session_file" "$session_file.before"

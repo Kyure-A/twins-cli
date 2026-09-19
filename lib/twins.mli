@@ -120,6 +120,20 @@ val notices :
   unit ->
   (notice list, Error.t) result
 
+type notice_result = notice Notice_pagination.result
+
+val notices_with_metadata :
+  ?session_file:string ->
+  ?all:bool ->
+  ?max_pages:int ->
+  kind:Notice_kind.t ->
+  unread:bool ->
+  title:string ->
+  limit:int ->
+  unit ->
+  (notice_result, Error.t) result
+
+val notice_result_to_yojson : notice_result -> Yojson.Safe.t
 val notice_to_yojson : notice -> Yojson.Safe.t
 val parse_notices : Soup.soup Soup.node -> (notice list, Error.t) result
 
