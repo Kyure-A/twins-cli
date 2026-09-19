@@ -133,6 +133,11 @@ let next ?(current_page = 1) soup =
         then Unsupported
         else End
 
+let page_number ~current href =
+  match Option.bind (Html.query_param "_pageCount" href) int_of_string_opt with
+  | Some number when number > 0 -> number
+  | _ -> current + 1
+
 let collect ~fetch ~parse ~next ~id ~limit ~max_pages first =
   let finish items pages_fetched reason =
     {

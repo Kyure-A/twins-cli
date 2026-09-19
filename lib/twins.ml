@@ -636,22 +636,19 @@ let notice_result_to_yojson (result : notice_result) =
           result.reason );
     ]
 
-let next_notice_page page =
-  let current_page =
-    Http_client.uri page.response |> fun uri ->
-    Option.bind (Uri.get_query_param uri "_pageCount") int_of_string_opt
-    |> Option.value ~default:1
-  in
-  Notice_pagination.next ~current_page page.soup
-
 let collect_notices session ~limit ~max_pages first =
+  (* Spring Web Flow may redirect away from the paging query. Keep the page
+     number from the followed link, independently of the final response URI. *)
   Notice_pagination.collect
-    ~fetch:(fun page href ->
-      get_page session (absolute_uri (Http_client.uri page.response) href))
-    ~parse:(fun page -> parse_notices_exn page.soup)
-    ~next:next_notice_page
+    ~fetch:(fun (current, page) href ->
+      let number = Notice_pagination.page_number ~current href in
+      ( number,
+        get_page session (absolute_uri (Http_client.uri page.response) href) ))
+    ~parse:(fun (_, page) -> parse_notices_exn page.soup)
+    ~next:(fun (current_page, page) ->
+      Notice_pagination.next ~current_page page.soup)
     ~id:(fun notice -> notice.seq)
-    ~limit ~max_pages first
+    ~limit ~max_pages (1, first)
 
 let notices_with_metadata ?session_file ?(all = false) ?(max_pages = 20) ~kind
     ~unread ~title ~limit () =
@@ -673,7 +670,7 @@ let notices ?session_file ~kind ~unread ~title ~limit () =
 let notice_detail_exn ?session_file ~kind seq =
   with_session ?session_file (fun session ->
       let page = notices_page session ~kind ~unread:false ~title:"" in
-      let rec find pages seen page =
+      let rec find pages current_page seen page =
         let href =
           page.soup |> Soup.select "a[href]" |> Soup.to_list
           |> List.find_map (fun anchor ->
@@ -687,14 +684,16 @@ let notice_detail_exn ?session_file ~kind seq =
             get_page session (absolute_uri (Http_client.uri page.response) href)
             |> fun detail -> Html.article_text detail.soup
         | None -> (
-            match next_notice_page page with
+            match Notice_pagination.next ~current_page page.soup with
             | Notice_pagination.Next href
               when pages < 20 && not (List.mem href seen) ->
                 let next =
                   get_page session
                     (absolute_uri (Http_client.uri page.response) href)
                 in
-                find (pages + 1) (href :: seen) next
+                find (pages + 1)
+                  (Notice_pagination.page_number ~current:current_page href)
+                  (href :: seen) next
             | Notice_pagination.End ->
                 Internal_error.protocolf "notice %s was not found" seq
             | _ ->
@@ -703,7 +702,7 @@ let notice_detail_exn ?session_file ~kind seq =
                    unsupported pager"
                   seq)
       in
-      find 1 [] page)
+      find 1 1 [] page)
 
 let notice_detail ?session_file ~kind seq =
   Internal_error.protect (fun () -> notice_detail_exn ?session_file ~kind seq)

@@ -144,10 +144,13 @@ let test_campus_pager () =
   let first = (1, page (row "A") (link 2 ^ link 3)) in
   let second = (2, page (row "B") (link 1 ^ link 3)) in
   let third = (3, page (row "C") (link 1 ^ link 2)) in
-  let fetch _ href =
-    match Html.query_param "_pageCount" href with
-    | Some "2" -> second
-    | Some "3" -> third
+  let fetch (current, _) href =
+    (* The response itself carries no page number; retain the followed link's
+       number even if Web Flow redirects to an opaque execution URL. *)
+    let number = Notice_pagination.page_number ~current href in
+    match number with
+    | 2 -> (number, snd second)
+    | 3 -> (number, snd third)
     | _ -> Alcotest.fail "unexpected page"
   in
   let result =
