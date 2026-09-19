@@ -636,12 +636,20 @@ let notice_result_to_yojson (result : notice_result) =
           result.reason );
     ]
 
+let next_notice_page page =
+  let current_page =
+    Http_client.uri page.response |> fun uri ->
+    Option.bind (Uri.get_query_param uri "_pageCount") int_of_string_opt
+    |> Option.value ~default:1
+  in
+  Notice_pagination.next ~current_page page.soup
+
 let collect_notices session ~limit ~max_pages first =
   Notice_pagination.collect
     ~fetch:(fun page href ->
       get_page session (absolute_uri (Http_client.uri page.response) href))
     ~parse:(fun page -> parse_notices_exn page.soup)
-    ~next:(fun page -> Notice_pagination.next page.soup)
+    ~next:next_notice_page
     ~id:(fun notice -> notice.seq)
     ~limit ~max_pages first
 
@@ -679,7 +687,7 @@ let notice_detail_exn ?session_file ~kind seq =
             get_page session (absolute_uri (Http_client.uri page.response) href)
             |> fun detail -> Html.article_text detail.soup
         | None -> (
-            match Notice_pagination.next page.soup with
+            match next_notice_page page with
             | Notice_pagination.Next href
               when pages < 20 && not (List.mem href seen) ->
                 let next =

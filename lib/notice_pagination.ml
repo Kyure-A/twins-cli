@@ -51,54 +51,87 @@ let pagination_control node =
            (Soup.attribute attribute node))
        [ "onclick" ]
 
-let next soup =
+let next ?(current_page = 1) soup =
   let controls =
     [ "a"; "button"; "input[type='button']"; "input[type='submit']" ]
     |> List.concat_map (fun selector ->
         Soup.select selector soup |> Soup.to_list)
   in
-  let candidates =
-    List.filter
-      (fun node ->
-        Soup.attribute "rel" node = Some "next"
-        || next_label (Html.node_text node)
-        || Option.fold ~none:false ~some:next_label
-             (Soup.attribute "value" node)
-        || Option.fold ~none:false ~some:next_label
-             (Soup.attribute "aria-label" node))
-      controls
+  let campus_controls =
+    controls
+    |> List.filter_map (fun node ->
+        match Soup.attribute "href" node with
+        | Some href when Html.query_param "_eventId_paging" href <> None ->
+            Some
+              ( href,
+                Option.bind
+                  (Html.query_param "_pageCount" href)
+                  int_of_string_opt )
+        | _ -> None)
   in
-  let active = List.filter (fun node -> not (disabled node)) candidates in
-  match active with
-  | node :: _ -> (
-      match Soup.attribute "href" node with
-      | Some href
-        when href <> ""
-             && href.[0] <> '#'
-             && (not
-                   (String.starts_with ~prefix:"javascript:"
-                      (String.lowercase_ascii href)))
-             && Html.query_param "seqNo" href = None ->
-          Next href
-      | _ -> Unsupported)
-  | [] ->
-      (* A disabled Next control establishes an end; unknown pager controls do
+  if campus_controls <> [] then
+    if
+      List.exists
+        (fun (_, number) ->
+          Option.fold ~none:true ~some:(fun number -> number < 1) number)
+        campus_controls
+    then Unsupported
+    else
+      let forward =
+        campus_controls
+        |> List.filter_map (fun (href, number) ->
+            match number with
+            | Some number when number > current_page -> Some (number, href)
+            | _ -> None)
+        |> List.sort compare
+      in
+      match forward with
+      | (number, href) :: _ when number = current_page + 1 -> Next href
+      | _ :: _ -> Unsupported
+      | [] -> End
+  else
+    let candidates =
+      List.filter
+        (fun node ->
+          Soup.attribute "rel" node = Some "next"
+          || next_label (Html.node_text node)
+          || Option.fold ~none:false ~some:next_label
+               (Soup.attribute "value" node)
+          || Option.fold ~none:false ~some:next_label
+               (Soup.attribute "aria-label" node))
+        controls
+    in
+    let active = List.filter (fun node -> not (disabled node)) candidates in
+    match active with
+    | node :: _ -> (
+        match Soup.attribute "href" node with
+        | Some href
+          when href <> ""
+               && href.[0] <> '#'
+               && (not
+                     (String.starts_with ~prefix:"javascript:"
+                        (String.lowercase_ascii href)))
+               && Html.query_param "seqNo" href = None ->
+            Next href
+        | _ -> Unsupported)
+    | [] ->
+        (* A disabled Next control establishes an end; unknown pager controls do
          not. Never infer a JavaScript form event or fabricate page numbers. *)
-      if candidates <> [] then End
-      else if
-        List.exists pagination_control controls
-        || List.exists
-             (fun selector -> Soup.select_one selector soup <> None)
-             [
-               ".pagination";
-               ".pager";
-               "*[class*='paging']";
-               "*[id*='paging']";
-               "select[name*='page']";
-               "select[name*='Page']";
-             ]
-      then Unsupported
-      else End
+        if candidates <> [] then End
+        else if
+          List.exists pagination_control controls
+          || List.exists
+               (fun selector -> Soup.select_one selector soup <> None)
+               [
+                 ".pagination";
+                 ".pager";
+                 "*[class*='paging']";
+                 "*[id*='paging']";
+                 "select[name*='page']";
+                 "select[name*='Page']";
+               ]
+        then Unsupported
+        else End
 
 let collect ~fetch ~parse ~next ~id ~limit ~max_pages first =
   let finish items pages_fetched reason =

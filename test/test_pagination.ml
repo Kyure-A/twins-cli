@@ -29,7 +29,8 @@ let collect ?(limit = None) ?(max_pages = 20) pages =
         pending := rest;
         page
   in
-  Notice_pagination.collect ~fetch ~parse:items ~next:Notice_pagination.next
+  Notice_pagination.collect ~fetch ~parse:items
+    ~next:(fun soup -> Notice_pagination.next soup)
     ~id:(fun (notice : Twins.notice) -> notice.seq)
     ~limit ~max_pages (List.hd pages)
 
@@ -78,7 +79,7 @@ let test_unknown () =
        [
          page (row "1")
            "<a \
-            href='campussquare.do?_eventId_paging=&amp;_pageCount=2&amp;_displayCount=100'>2</a>";
+            href='campussquare.do?_eventId_paging=&amp;_pageCount=invalid&amp;_displayCount=100'>2</a>";
        ]);
 
   check (Some "unsupported_pagination") 1 1
@@ -133,6 +134,38 @@ let test_structure () =
   let table = Html.structure soup |> member "tables" |> to_list |> List.hd in
   Alcotest.(check int) "thead count" 1 (table |> member "thead_rows" |> to_int)
 
+let test_campus_pager () =
+  let link number =
+    Printf.sprintf
+      "<a \
+       href='campussquare.do?_flowExecutionKey=fixture&amp;_eventId_paging=&amp;_displayCount=100&amp;_pageCount=%d'>%d</a>"
+      number number
+  in
+  let first = (1, page (row "A") (link 2 ^ link 3)) in
+  let second = (2, page (row "B") (link 1 ^ link 3)) in
+  let third = (3, page (row "C") (link 1 ^ link 2)) in
+  let fetch _ href =
+    match Html.query_param "_pageCount" href with
+    | Some "2" -> second
+    | Some "3" -> third
+    | _ -> Alcotest.fail "unexpected page"
+  in
+  let result =
+    Notice_pagination.collect ~fetch
+      ~parse:(fun (_, soup) -> items soup)
+      ~next:(fun (current_page, soup) ->
+        Notice_pagination.next ~current_page soup)
+      ~id:(fun (notice : Twins.notice) -> notice.seq)
+      ~limit:None ~max_pages:20 first
+  in
+  check None 3 3 result;
+  Alcotest.(check (list string))
+    "all distinct page IDs" [ "A"; "B"; "C" ]
+    (List.map (fun (notice : Twins.notice) -> notice.seq) result.items);
+  match Notice_pagination.next ~current_page:1 (page (row "A") (link 3)) with
+  | Notice_pagination.Unsupported -> ()
+  | _ -> Alcotest.fail "must not skip unlinked page 2"
+
 let test_observed_tables () =
   let fixture file =
     let ch = open_in ("fixtures/" ^ file) in
@@ -176,5 +209,7 @@ let () =
             test_structure;
           Alcotest.test_case "observed thead and general columns" `Quick
             test_observed_tables;
+          Alcotest.test_case "observed numeric CampusSquare pager" `Quick
+            test_campus_pager;
         ] );
     ]

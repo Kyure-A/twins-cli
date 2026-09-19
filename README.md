@@ -95,7 +95,8 @@ automatic retry.
 
 ### Notice pagination and completeness
 
-Notice searches follow explicit Next links without opening notice bodies. The
+Notice searches follow explicit Next links and the observed CampusSquare
+`_eventId_paging` / `_pageCount` links without opening notice bodies. The
 item limit defaults to 50; `--all` removes that limit. `--max-pages` defaults to
 20 and accepts 1..100. Duplicate notice IDs are collapsed and loops are bounded.
 `notice ID` also searches up to 20 listing pages before opening only the requested
@@ -108,8 +109,9 @@ notice array and partial coverage is reported on stderr. A missing result table
 or a notice row without an ID is an error, not a complete empty result.
 
 JavaScript-only or unrecognized pager controls are reported as partial; their
-form events are never guessed. There is currently no captured authenticated
-pager fixture, so this behavior is fixture-tested, not live-service verified.
+form events are never guessed. Authenticated table/header topology and numeric
+CampusSquare paging links have been verified through redacted diagnostics;
+fixtures reproduce that structure using synthetic records only.
 Use the metadata when deciding whether absent notices can be removed from a
 local mirror.
 
