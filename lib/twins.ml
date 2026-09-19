@@ -106,7 +106,7 @@ let login ?session_file ~username ~password () =
       login_exn ?session_file ~username ~password ())
 
 let logout_exn ?session_file () =
-  let session = Session.load ?path:session_file () in
+  let session = Session.load ~allow_incompatible:true ?path:session_file () in
   Fun.protect
     ~finally:(fun () -> Session.clear session)
     (fun () ->

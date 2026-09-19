@@ -128,7 +128,15 @@ let test_persistence () =
             "sid=successful-login; Path=/; Secure");
       eq "successful authentication atomically replaces prior file"
         "sid=successful-login"
-        (Session.cookie_header (Session.load ~path ()) origin))
+        (Session.cookie_header (Session.load ~path ()) origin);
+      let ch = open_out path in
+      output_string ch legacy;
+      close_out ch;
+      (match Twins.logout ~session_file:path () with
+      | Ok () -> ()
+      | Error error -> Alcotest.fail (Error.to_string error));
+      Alcotest.(check bool)
+        "explicit logout can delete legacy session" false (Sys.file_exists path))
 
 let run_request ?body send =
   Lwt_main.run (Http_client.request_lwt ~send ?body (session ()) `POST origin 8)
