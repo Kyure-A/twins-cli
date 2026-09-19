@@ -107,6 +107,24 @@ let test_empty_and_missing () =
   | Error _ -> ()
   | Ok _ -> Alcotest.fail "unidentified row must fail"
 
+let test_structure () =
+  let secret = "PRIVATE_TOKEN_FIXTURE" in
+  let soup =
+    Soup.parse
+      ("<table><thead><tr><th>ジャンル</th><th>" ^ secret
+     ^ "</th></tr></thead><tbody><tr><td>" ^ secret
+     ^ "</td></tr></tbody></table><input type='hidden' value='" ^ secret
+     ^ "'><a href='campussquare.do?_flowExecutionKey=" ^ secret
+     ^ "&amp;pageNo=2'>次へ</a>")
+  in
+  let rendered = Html.structure soup |> Yojson.Safe.to_string in
+  Alcotest.(check bool)
+    "no private values or data cells" false
+    (String.split_on_char '"' rendered |> List.mem secret);
+  let open Yojson.Safe.Util in
+  let table = Html.structure soup |> member "tables" |> to_list |> List.hd in
+  Alcotest.(check int) "thead count" 1 (table |> member "thead_rows" |> to_int)
+
 let () =
   Alcotest.run "TWINS pagination"
     [
@@ -118,5 +136,7 @@ let () =
           Alcotest.test_case "page limits and cycles" `Quick test_bounds;
           Alcotest.test_case "unknown pagers are partial" `Quick test_unknown;
           Alcotest.test_case "empty vs malformed" `Quick test_empty_and_missing;
+          Alcotest.test_case "redacted structural diagnostics" `Quick
+            test_structure;
         ] );
     ]

@@ -787,7 +787,8 @@ let resolve_flow name =
   | None when Util.contains ~needle:"-flow" name -> name
   | None -> Internal_error.invalidf "unknown menu or flow %S" name
 
-let raw_exn ?session_file ~flow ~form_name ~event ~fields () =
+let raw_exn ?session_file ?(structure = false) ~flow ~form_name ~event ~fields
+    () =
   with_session ?session_file (fun session ->
       let page = start_flow session (resolve_flow flow) in
       let page =
@@ -795,11 +796,12 @@ let raw_exn ?session_file ~flow ~form_name ~event ~fields () =
         | None -> page
         | Some event -> post_event session page ~form_name event fields
       in
-      Html.article_text page.soup)
+      if structure then Html.structure page.soup |> Yojson.Safe.to_string
+      else Html.article_text page.soup)
 
-let raw ?session_file ~flow ~form_name ~event ~fields () =
+let raw ?session_file ?structure ~flow ~form_name ~event ~fields () =
   Internal_error.protect (fun () ->
-      raw_exn ?session_file ~flow ~form_name ~event ~fields ())
+      raw_exn ?session_file ?structure ~flow ~form_name ~event ~fields ())
 
 let pre_registration_io session =
   let open_flow flow = (start_flow session flow).soup in

@@ -155,6 +155,7 @@ val menu : menu_item list
 
 val raw :
   ?session_file:string ->
+  ?structure:bool ->
   flow:string ->
   form_name:string ->
   event:string option ->

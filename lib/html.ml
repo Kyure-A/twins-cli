@@ -195,3 +195,117 @@ let registrations soup =
 let query_param name href =
   try Uri.get_query_param (Uri.of_string href) name
   with Invalid_argument _ -> None
+
+(* Diagnostic output is deliberately structural: no data cells, URLs, input
+   values, scripts, or arbitrary labels can escape into support logs. *)
+let structure soup =
+  let labels =
+    [
+      "ジャンル";
+      "科目";
+      "担当者";
+      "表題";
+      "掲示期間";
+      "掲載日時";
+      "No.";
+      "年度";
+      "学期";
+      "科目番号";
+      "科目名";
+      "曜日";
+      "時限";
+    ]
+  in
+  let label value = if List.mem value labels then `String value else `Null in
+  let count selector root =
+    Soup.select selector root |> Soup.to_list |> List.length
+  in
+  let row_labels selector table =
+    Soup.select selector table |> Soup.to_list |> Util.take 2
+    |> List.map (fun row -> `List (List.map label (cell_texts row)))
+  in
+  let tables =
+    Soup.select "table" soup |> Soup.to_list
+    |> List.mapi (fun index table ->
+        `Assoc
+          [
+            ("index", `Int index);
+            ("thead_rows", `Int (count "> thead > tr" table));
+            ("tbody_rows", `Int (count "> tbody > tr" table));
+            ("direct_rows", `Int (count "> tr" table));
+            ("thead_labels", `List (row_labels "> thead > tr" table));
+            ("tbody_labels", `List (row_labels "> tbody > tr" table));
+            ("direct_labels", `List (row_labels "> tr" table));
+          ])
+  in
+  let next_labels = [ "次"; "次へ"; "次ページ"; "次のページ"; "next"; ">"; ">>" ] in
+  let controls =
+    [ "a"; "button"; "input[type='button']"; "input[type='submit']" ]
+    |> List.concat_map (fun selector ->
+        Soup.select selector soup |> Soup.to_list)
+    |> List.filter (fun node ->
+        Soup.attribute "rel" node = Some "next"
+        || List.mem (String.lowercase_ascii (node_text node)) next_labels
+        || Option.fold ~none:false
+             ~some:(fun value -> List.mem value next_labels)
+             (Soup.attribute "value" node))
+    |> List.map (fun node ->
+        let href = Soup.attribute "href" node |> Option.value ~default:"" in
+        let query = Uri.query (Uri.of_string href) in
+        let safe_query =
+          query
+          |> List.map (fun (name, values) ->
+              let value =
+                if
+                  List.mem
+                    (String.lowercase_ascii name)
+                    [ "page"; "pageno"; "pagenumber"; "pageindex" ]
+                then
+                  values
+                  |> List.filter (fun value ->
+                      String.length value <= 6
+                      && String.for_all
+                           (function '0' .. '9' -> true | _ -> false)
+                           value)
+                else []
+              in
+              `Assoc
+                [
+                  ("name", `String name);
+                  ( "numeric_values",
+                    `List (List.map (fun value -> `String value) value) );
+                ])
+        in
+        let source =
+          Soup.attribute "onclick" node |> Option.value ~default:href
+        in
+        let function_name =
+          match String.index_opt source '(' with
+          | Some index -> String.sub source 0 index |> String.trim
+          | None -> ""
+        in
+        let function_name =
+          if
+            String.length function_name <= 64
+            && String.for_all
+                 (function
+                   | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' | '.' | ':' ->
+                       true
+                   | _ -> false)
+                 function_name
+          then function_name
+          else ""
+        in
+        `Assoc
+          [
+            ("tag", `String (Soup.name node));
+            ("has_onclick", `Bool (Soup.has_attribute "onclick" node));
+            ( "javascript",
+              `Bool
+                (String.starts_with ~prefix:"javascript:"
+                   (String.lowercase_ascii href)) );
+            ("query", `List safe_query);
+            ("function", `String function_name);
+          ])
+  in
+  `Assoc [ ("tables", `List tables); ("next_controls", `List controls) ]

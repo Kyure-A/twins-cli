@@ -511,7 +511,12 @@ let raw_command =
       value & opt_all string []
       & info [ "field"; "F" ] ~docv:"NAME=VALUE" ~doc:"フォーム値。複数指定できます。")
   in
-  let execute session_file form_name event field yes flow =
+  let structure =
+    Arg.(
+      value & flag
+      & info [ "structure" ] ~doc:"テーブル構造とページ送り要素だけを匿名化 JSON で出力します。")
+  in
+  let execute session_file form_name event field yes flow structure =
     run (fun () ->
         let fields =
           field
@@ -528,12 +533,14 @@ let raw_command =
                 (confirm yes (Printf.sprintf "%s にイベント %s を送信します。" flow event))
             then raise (Cli_error (Error.Cancelled "送信を中止しました。")))
           event;
-        Twins.raw ?session_file ~flow ~form_name ~event ~fields ()
+        Twins.raw ?session_file ~structure ~flow ~form_name ~event ~fields ()
         |> unwrap |> print_endline)
   in
   Cmd.v
     (Cmd.info "raw" ~doc:"メニューフローを開き、必要ならフォームイベントを 1 回送信します。")
-    Term.(const execute $ session $ form_name $ event $ field $ yes $ flow)
+    Term.(
+      const execute $ session $ form_name $ event $ field $ yes $ flow
+      $ structure)
 
 let command =
   let doc = "筑波大学 TWINS を操作する OCaml 製 CLI" in

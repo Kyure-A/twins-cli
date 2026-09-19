@@ -34,3 +34,7 @@ type registration = {
 
 val registrations : 'a Soup.node -> registration list
 val query_param : string -> string -> string option
+
+val structure : 'a Soup.node -> Yojson.Safe.t
+(** Redacted table topology and pager descriptors; no account contents or state.
+*)

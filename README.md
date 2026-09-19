@@ -143,6 +143,10 @@ twins raw notices --form keijiSearchForm --event findSelect \
   -F keijitype=3 -F keijiTitle=Scholarship
 ```
 
+For parser diagnostics, add `--structure` to `raw`: it emits table topology,
+allowlisted column labels, and pager descriptors without data cells, hidden
+values, full URLs, or arbitrary page text.
+
 Run `twins COMMAND --help` for the complete command reference.
 
 ## CI
