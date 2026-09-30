@@ -69,6 +69,10 @@ Prefer JSON whenever the command supports it:
 
 - Get grades with `grades --json`.
 - Get a timetable with `timetable --module MODULE --json`.
+- For all eight modules, use one `timetable --all --json` call. It returns a
+  `snapshots` object mapping every module slug to its row array, including empty
+  arrays. The single-module command returns only its row array. Choose exactly
+  one of `--module` or `--all`.
 - List notices with `notices --kind classes|general --json`.
 - Filter notices with `--unread`, `--title TEXT`, or `--limit N`.
 - For complete mirror reads use `notices --all --max-pages 20 --metadata --json`;
@@ -148,5 +152,14 @@ Before sending `raw --event`:
 Do not invent flow names, form names, events, or field values. Discover available flows with `menu --json` and inspect `raw --help=plain` when necessary.
 
 ## Handle failures
+
+Timetable JSON reads emit stdout only after the entire request succeeds; do not
+replace a local mirror after a failed batch. Operational failures and invalid
+module selection return exit status 1 with `{"error":{"code":"..."}}` on
+stderr; HTTP failures also include `httpStatus`. Codes include
+`authentication_required`, `http_error`, `protocol_error`, `io_error`,
+`invalid_argument`, `cancelled`, and `unexpected_error`. These errors omit
+server content, URLs, and session details. Argument-parser syntax errors retain
+their usual diagnostics.
 
 Show actionable CLI errors concisely without exposing cookies or credentials. If TWINS markup or a Spring Web Flow has changed, report that the unofficial client may need an update. Do not fall back to browser automation or the official web interface unless the user asks for that expansion.

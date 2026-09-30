@@ -297,19 +297,15 @@ module Period = struct
     else Error (Error.Invalid_argument "--period は 1 から 9 で指定してください。")
 end
 
-let registration_page session module_ =
+let select_registration_module session ~key module_ =
   let module_code, term_code = Module.codes module_ in
-  let page = start_flow session "RSW0001000-flow" in
-  let key = flow_key page in
   get_page session
     (make_uri "campussquare.do"
-       ~query:
-         [
-           ("_flowExecutionKey", [ key ]);
-           ("_eventId", [ "search" ]);
-           ("moduleCode", [ module_code ]);
-           ("gakkiKbnCode", [ term_code ]);
-         ])
+       ~query:(Timetable_batch.search_query ~key ~module_code ~term_code))
+
+let registration_page session module_ =
+  let page = start_flow session "RSW0001000-flow" in
+  select_registration_module session ~key:(flow_key page) module_
 
 type timetable_entry = {
   module_label : string;
@@ -426,6 +422,32 @@ let timetable_exn ?session_file module_ =
 
 let timetable ?session_file module_ =
   Internal_error.protect (fun () -> timetable_exn ?session_file module_)
+
+let timetable_all ?session_file () =
+  Internal_error.protect (fun () ->
+      with_session ?session_file (fun session ->
+          Timetable_batch.collect
+            ~start:(fun () -> start_flow session "RSW0001000-flow")
+            ~flow_key
+            ~select:(select_registration_module session)
+            ~parse:(fun module_ page ->
+              let module_code, term_code = Module.codes module_ in
+              Timetable_batch.validate_selection ~module_code ~term_code
+                page.soup;
+              parse_timetable_exn module_ page.soup)
+            Module.all))
+
+let timetable_snapshots_to_yojson snapshots =
+  `Assoc
+    [
+      ( "snapshots",
+        `Assoc
+          (List.map
+             (fun (module_, entries) ->
+               ( Module.to_string module_,
+                 `List (List.map timetable_entry_to_yojson entries) ))
+             snapshots) );
+    ]
 
 let parse_timetable module_ soup =
   Internal_error.protect (fun () -> parse_timetable_exn module_ soup)

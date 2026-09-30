@@ -10,16 +10,20 @@ let unwrap = function
   | Ok value -> value
   | Error error -> raise (Cli_error error)
 
-let run operation =
+let run ?(json_errors = false) operation =
+  let fail_error error =
+    if json_errors then (
+      Yojson.Safe.to_channel stderr (Error.to_safe_yojson error);
+      output_char stderr '\n';
+      exit 1)
+    else fail (Error.to_string error)
+  in
   try operation () with
-  | Cli_error error -> fail (Error.to_string error)
-  | Sys_error message -> fail message
-  | Unix.Unix_error (error, function_name, argument) ->
-      fail
-        (Printf.sprintf "%s: %s (%s)" function_name (Unix.error_message error)
-           argument)
-  | (Out_of_memory | Stack_overflow | Sys.Break) as fatal -> raise fatal
-  | exn -> fail (Printexc.to_string exn)
+  | Cli_error error -> fail_error error
+  | exn -> (
+      match Error.of_exn exn with
+      | Some error -> fail_error error
+      | None -> raise exn)
 
 let read_password prompt =
   match Sys.getenv_opt "TWINS_PASSWORD" with
@@ -181,12 +185,38 @@ let module_slug =
     required & opt (some string) None & info [ "module" ] ~docv:"MODULE" ~doc)
 
 let timetable_command =
-  let execute session_file module_slug json =
-    run (fun () ->
-        let module_ = Twins.Module.of_string module_slug |> unwrap in
-        let entries = Twins.timetable ?session_file module_ |> unwrap in
+  let selected_module =
+    Arg.(
+      value
+      & opt (some string) None
+      & info [ "module" ] ~docv:"MODULE" ~doc:"取得するモジュール。--all と同時には指定できません。")
+  in
+  let all =
+    Arg.(value & flag & info [ "all" ] ~doc:"全 8 モジュールを同じセッションで順番に取得します。")
+  in
+  let execute session_file selected_module all json =
+    run ~json_errors:json (fun () ->
+        let snapshots =
+          match (all, selected_module) with
+          | true, None -> Twins.timetable_all ?session_file () |> unwrap
+          | false, Some slug ->
+              let module_ = Twins.Module.of_string slug |> unwrap in
+              [ (module_, Twins.timetable ?session_file module_ |> unwrap) ]
+          | _ ->
+              raise
+                (Cli_error
+                   (Error.Invalid_argument
+                      "specify exactly one of --module MODULE or --all"))
+        in
         if json then
-          print_json (`List (List.map Twins.timetable_entry_to_yojson entries))
+          if all then print_json (Twins.timetable_snapshots_to_yojson snapshots)
+          else
+            print_json
+              (`List
+                 (List.concat_map
+                    (fun (_, entries) ->
+                      List.map Twins.timetable_entry_to_yojson entries)
+                    snapshots))
         else (
           print_tsv [ "モジュール"; "曜日"; "時限"; "科目番号"; "内容"; "集中" ];
           List.iter
@@ -200,11 +230,11 @@ let timetable_command =
                   entry.description;
                   string_of_bool entry.intensive;
                 ])
-            entries))
+            (List.concat_map snd snapshots)))
   in
   Cmd.v
     (Cmd.info "timetable" ~doc:"履修時間割を表示します。")
-    Term.(const execute $ session $ module_slug $ json)
+    Term.(const execute $ session $ selected_module $ all $ json)
 
 let course_code =
   Arg.(required & pos 0 (some string) None & info [] ~docv:"COURSE_CODE")

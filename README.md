@@ -70,6 +70,7 @@ twins auth logout
 # Grades and timetable
 twins grades --json
 twins timetable --module autumn-a
+twins timetable --all --json
 
 # Notices and cancellations
 twins notices --kind classes --unread --limit 20
@@ -92,6 +93,23 @@ Success requires the target course to be present/absent as requested and all
 other timetable entries and registration keys to be unchanged. A success-looking
 submission response is insufficient. Missing tables and mismatches fail with no
 automatic retry.
+
+### Timetable snapshots
+
+Choose exactly one of `--module MODULE` or `--all`. A single-module JSON read
+returns an array of timetable rows. `timetable --all --json` returns
+`{"snapshots":{"spring-a":[],"spring-b":[],"spring-c":[],"summer":[],"autumn-a":[],"autumn-b":[],"autumn-c":[],"spring-break":[]}}`,
+with each array containing that module's rows. All eight keys are present,
+including modules with no courses.
+
+The batch loads and saves the session once, opens one registration flow, and
+queries modules sequentially using each response's latest flow execution key.
+It writes stdout only after every module succeeds; a failed batch never emits
+partial snapshots. With `--json`, operational failures and invalid module
+selection return exit status 1 and a sanitized JSON error on stderr, such as
+`{"error":{"code":"authentication_required"}}`. HTTP failures also include
+`httpStatus`. Error output omits server content, URLs, and session details.
+Command-line syntax errors still use the argument parser's usual diagnostics.
 
 ### Notice pagination and completeness
 

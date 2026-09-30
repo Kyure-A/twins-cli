@@ -19,6 +19,9 @@ grep -q -- '--password-stdin' <<<"$login_help"
 registration_help=$("${cli[@]}" registration add --help=plain)
 grep -q -- '-y, --yes' <<<"$registration_help"
 
+timetable_help=$("${cli[@]}" timetable --help=plain)
+grep -q -- '--all' <<<"$timetable_help"
+
 menu_output=$("${cli[@]}" menu)
 grep -q $'registration\tRSW0001000-flow' <<<"$menu_output"
 grep -q $'grades\tSIW0001200-flow' <<<"$menu_output"
@@ -26,6 +29,25 @@ grep -q $'grades\tSIW0001200-flow' <<<"$menu_output"
 smoke_directory=$(mktemp -d)
 trap 'rm -rf -- "$smoke_directory"' EXIT
 session_file="$smoke_directory/session"
+
+# These failures are local validation only, before any session or network read.
+expect_timetable_json_error() {
+  local expected_code=$1
+  shift
+  local status=0
+  "${cli[@]}" timetable --json --session "$session_file" "$@" \
+    > "$smoke_directory/timetable.stdout" \
+    2> "$smoke_directory/timetable.stderr" || status=$?
+  test "$status" -eq 1
+  test ! -s "$smoke_directory/timetable.stdout"
+  test "$(< "$smoke_directory/timetable.stderr")" = \
+    "{\"error\":{\"code\":\"$expected_code\"}}"
+}
+
+expect_timetable_json_error invalid_argument
+expect_timetable_json_error invalid_argument --all --module autumn-a
+expect_timetable_json_error invalid_argument --module winter-z
+test ! -e "$session_file"
 
 status_output=$("${cli[@]}" auth status --session "$session_file")
 test "$status_output" = "logged out"
@@ -96,4 +118,8 @@ printf '# legacy fixture\nsid\tfake-fixture\n' > "$session_file"
 cp "$session_file" "$session_file.before"
 status_output=$("${cli[@]}" auth status --session "$session_file")
 test "$status_output" = "logged out"
+cmp "$session_file" "$session_file.before"
+
+# A synthetic legacy file fails during loading, without contacting TWINS.
+expect_timetable_json_error protocol_error --all
 cmp "$session_file" "$session_file.before"

@@ -19,6 +19,19 @@ let to_string = function
   | Http_error { status; uri } ->
       Printf.sprintf "TWINS returned HTTP %d for %s" status (Uri.to_string uri)
 
+let to_safe_yojson error =
+  let code, details =
+    match error with
+    | Authentication_required -> ("authentication_required", [])
+    | Invalid_argument _ -> ("invalid_argument", [])
+    | Http_error { status; _ } -> ("http_error", [ ("httpStatus", `Int status) ])
+    | Protocol_error _ -> ("protocol_error", [])
+    | Cancelled _ -> ("cancelled", [])
+    | Io_error _ -> ("io_error", [])
+    | Unexpected_error _ -> ("unexpected_error", [])
+  in
+  `Assoc [ ("error", `Assoc (("code", `String code) :: details)) ]
+
 let of_exn = function
   | Sys_error message -> Some (Io_error message)
   | Unix.Unix_error (error, function_name, argument) ->

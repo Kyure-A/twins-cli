@@ -8,4 +8,5 @@ type t =
   | Unexpected_error of string
 
 val to_string : t -> string
+val to_safe_yojson : t -> Yojson.Safe.t
 val of_exn : exn -> t option

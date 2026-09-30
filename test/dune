@@ -37,3 +37,8 @@
  (name test_registration)
  (modules test_registration)
  (libraries alcotest twins))
+
+(test
+ (name test_timetable_batch)
+ (modules test_timetable_batch)
+ (libraries alcotest twins))

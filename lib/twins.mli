@@ -91,6 +91,14 @@ val timetable :
 
 val timetable_entry_to_yojson : timetable_entry -> Yojson.Safe.t
 
+val timetable_all :
+  ?session_file:string ->
+  unit ->
+  ((Module.t * timetable_entry list) list, Error.t) result
+
+val timetable_snapshots_to_yojson :
+  (Module.t * timetable_entry list) list -> Yojson.Safe.t
+
 val parse_timetable :
   Module.t -> Soup.soup Soup.node -> (timetable_entry list, Error.t) result
 
