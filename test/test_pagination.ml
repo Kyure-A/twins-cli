@@ -66,6 +66,98 @@ let test_limit () =
   check None 1 1 (collect ~limit:(Some 1) [ page (row "1") last ]);
   check (Some "limit") 0 1 (collect ~limit:(Some 0) [ page (row "1") last ])
 
+let collect_entries ?(limit = None) ?(max_pages = 20) pages =
+  let pages = Array.of_list pages in
+  Notice_pagination.collect
+    ~fetch:(fun _ href -> int_of_string href)
+    ~parse:(Array.get pages)
+    ~next:(fun index ->
+      if index + 1 = Array.length pages then Notice_pagination.End
+      else Notice_pagination.Next (string_of_int (index + 1)))
+    ~id:fst ~limit ~max_pages 0
+
+let test_first_occurrence_order () =
+  let first = ("C", "first C") in
+  let result =
+    collect_entries
+      [
+        [ first; ("B", "first B"); ("C", "same-page duplicate") ];
+        [ ("A", "first A"); ("B", "later-page duplicate"); ("D", "first D") ];
+      ]
+  in
+  check None 4 2 result;
+  Alcotest.(check (list (pair string string)))
+    "first payload and encounter order"
+    [ first; ("B", "first B"); ("A", "first A"); ("D", "first D") ]
+    result.items;
+  Alcotest.(check bool)
+    "retain the original item" true
+    (List.hd result.items == first);
+  let repeated =
+    collect_entries
+      [
+        [ first; ("B", "first B") ]; [ ("B", "changed B"); ("C", "changed C") ];
+      ]
+  in
+  check (Some "pagination_loop") 2 2 repeated;
+  Alcotest.(check (list (pair string string)))
+    "a reordered repeated page retains the first payloads"
+    [ first; ("B", "first B") ]
+    repeated.items
+
+let test_distinct_limit_boundaries () =
+  let pages =
+    [
+      [ ("B", "first B"); ("A", "first A"); ("B", "duplicate B") ];
+      [ ("A", "duplicate A"); ("C", "first C"); ("D", "first D") ];
+      [ ("E", "first E") ];
+    ]
+  in
+  List.iter
+    (fun (limit, reason, fetched, expected) ->
+      let result = collect_entries ~limit:(Some limit) pages in
+      check reason (List.length expected) fetched result;
+      Alcotest.(check (list string))
+        (Printf.sprintf "distinct limit %d preserves order" limit)
+        expected
+        (List.map fst result.items))
+    [
+      (0, Some "limit", 1, []);
+      (1, Some "limit", 1, [ "B" ]);
+      (2, Some "limit", 1, [ "B"; "A" ]);
+      (3, Some "limit", 2, [ "B"; "A"; "C" ]);
+      (4, Some "limit", 2, [ "B"; "A"; "C"; "D" ]);
+      (5, None, 3, [ "B"; "A"; "C"; "D"; "E" ]);
+      (6, None, 3, [ "B"; "A"; "C"; "D"; "E" ]);
+    ];
+  check (Some "page_limit") 2 1 (collect_entries ~max_pages:1 pages)
+
+let test_collect_failures () =
+  let run ~fetch ~parse =
+    Notice_pagination.collect ~fetch ~parse
+      ~next:(fun _ -> Notice_pagination.Next "next")
+      ~id:fst ~limit:None ~max_pages:20 0
+  in
+  Alcotest.check_raises "fetch failure is propagated"
+    (Failure "fixture fetch failed") (fun () ->
+      ignore
+        (run
+           ~fetch:(fun _ _ -> failwith "fixture fetch failed")
+           ~parse:(fun _ -> [ ("A", "first A") ])));
+  let parsed = ref [] in
+  Alcotest.check_raises "later parser failure is propagated"
+    (Failure "fixture parser failed") (fun () ->
+      ignore
+        (run
+           ~fetch:(fun _ _ -> 1)
+           ~parse:(fun index ->
+             parsed := index :: !parsed;
+             if index = 1 then failwith "fixture parser failed"
+             else [ ("A", "first A") ])));
+  Alcotest.(check (list int))
+    "parse each fetched page once" [ 0; 1 ] (List.rev !parsed);
+  check None 1 1 (collect_entries [ [ ("A", "fresh call") ] ])
+
 let test_bounds () =
   check (Some "page_limit") 1 1 (collect ~max_pages:1 [ page (row "1") next ]);
   check (Some "pagination_loop") 1 2
@@ -205,6 +297,12 @@ let () =
           Alcotest.test_case "multiple pages, dedup and metadata" `Quick
             test_all;
           Alcotest.test_case "item limits" `Quick test_limit;
+          Alcotest.test_case "first occurrence payload and order" `Quick
+            test_first_occurrence_order;
+          Alcotest.test_case "distinct item limit boundaries" `Quick
+            test_distinct_limit_boundaries;
+          Alcotest.test_case "collector failures propagate" `Quick
+            test_collect_failures;
           Alcotest.test_case "page limits and cycles" `Quick test_bounds;
           Alcotest.test_case "unknown pagers are partial" `Quick test_unknown;
           Alcotest.test_case "empty vs malformed" `Quick test_empty_and_missing;

@@ -3,6 +3,7 @@ type t =
   | Invalid_argument of string
   | Http_error of { status : int; uri : Uri.t }
   | Protocol_error of string
+  | Timeout of string
   | Cancelled of string
   | Io_error of string
   | Unexpected_error of string
@@ -12,6 +13,7 @@ let to_string = function
       "TWINS session is missing or expired; run `twins auth login`"
   | Invalid_argument message
   | Protocol_error message
+  | Timeout message
   | Cancelled message
   | Io_error message
   | Unexpected_error message ->
@@ -26,6 +28,7 @@ let to_safe_yojson error =
     | Invalid_argument _ -> ("invalid_argument", [])
     | Http_error { status; _ } -> ("http_error", [ ("httpStatus", `Int status) ])
     | Protocol_error _ -> ("protocol_error", [])
+    | Timeout _ -> ("timeout", [])
     | Cancelled _ -> ("cancelled", [])
     | Io_error _ -> ("io_error", [])
     | Unexpected_error _ -> ("unexpected_error", [])

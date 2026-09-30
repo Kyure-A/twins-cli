@@ -64,3 +64,25 @@
   ../lib/.twins.objs/byte/http_client.cmi
   ../lib/.twins.objs/byte/internal_error.cmi)
  (libraries alcotest twins cohttp-lwt-unix lwt.unix))
+
+(test
+ (name test_http_compression)
+ (modules test_http_compression)
+ (flags (:standard -I lib/.twins.objs/byte))
+ (preprocess (action (run cat %{input-file})))
+ (preprocessor_deps
+  ../lib/.twins.objs/byte/session.cmi
+  ../lib/.twins.objs/byte/http_client.cmi
+  ../lib/.twins.objs/byte/http_compression.cmi
+  ../lib/.twins.objs/byte/internal_error.cmi)
+ (libraries alcotest twins camlzip cohttp-lwt-unix lwt.unix))
+
+(test
+ (name test_notice_pool)
+ (modules test_notice_pool)
+ (flags (:standard -I lib/.twins.objs/byte))
+ (preprocess (action (run cat %{input-file})))
+ (preprocessor_deps
+  ../lib/.twins.objs/byte/http_client.cmi
+  ../lib/.twins.objs/byte/notice_read.cmi)
+ (libraries alcotest twins cohttp-lwt-unix lwt.unix))

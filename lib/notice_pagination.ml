@@ -139,7 +139,12 @@ let page_number ~current href =
   | _ -> current + 1
 
 let collect ~fetch ~parse ~next ~id ~limit ~max_pages first =
-  let finish items pages_fetched reason =
+  let seen_ids = Hashtbl.create 128 in
+  let finish reversed_items pages_fetched reason =
+    let items = List.rev reversed_items in
+    let items =
+      match limit with Some limit -> Util.take limit items | None -> items
+    in
     {
       items;
       pages_fetched;
@@ -147,43 +152,45 @@ let collect ~fetch ~parse ~next ~id ~limit ~max_pages first =
       completeness = (if reason = None then "complete" else "partial");
     }
   in
-  let rec loop page pages seen_pages seen_links items =
+  let rec loop page pages seen_pages seen_links item_count reversed_items =
     let found = parse page in
     let fingerprint = List.map id found |> List.sort String.compare in
     if List.mem fingerprint seen_pages then
-      finish items pages (Some "pagination_loop")
+      finish reversed_items pages (Some "pagination_loop")
     else
-      let items =
+      let item_count, reversed_items =
         List.fold_left
-          (fun collected item ->
-            if List.exists (fun old -> id old = id item) collected then
-              collected
-            else collected @ [ item ])
-          items found
+          (fun ((count, collected) as accumulator) item ->
+            let key = id item in
+            if Hashtbl.mem seen_ids key then accumulator
+            else (
+              Hashtbl.add seen_ids key ();
+              (count + 1, item :: collected)))
+          (item_count, reversed_items)
+          found
       in
-      let truncated, items =
-        match limit with
-        | Some limit -> (List.length items > limit, Util.take limit items)
-        | None -> (false, items)
+      let truncated =
+        Option.fold ~none:false ~some:(fun limit -> item_count > limit) limit
       in
-      if truncated then finish items pages (Some "limit")
+      if truncated then finish reversed_items pages (Some "limit")
       else
         match next page with
-        | End -> finish items pages None
-        | Unsupported -> finish items pages (Some "unsupported_pagination")
+        | End -> finish reversed_items pages None
+        | Unsupported ->
+            finish reversed_items pages (Some "unsupported_pagination")
         | Next href ->
             if List.mem href seen_links then
-              finish items pages (Some "pagination_loop")
+              finish reversed_items pages (Some "pagination_loop")
             else if
               Option.fold ~none:false
-                ~some:(fun limit -> List.length items >= limit)
+                ~some:(fun limit -> item_count >= limit)
                 limit
-            then finish items pages (Some "limit")
+            then finish reversed_items pages (Some "limit")
             else if pages >= max_pages then
-              finish items pages (Some "page_limit")
+              finish reversed_items pages (Some "page_limit")
             else
               loop (fetch page href) (pages + 1)
                 (fingerprint :: seen_pages)
-                (href :: seen_links) items
+                (href :: seen_links) item_count reversed_items
   in
-  loop first 1 [] [] []
+  loop first 1 [] [] 0 []

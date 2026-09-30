@@ -57,6 +57,13 @@ Each request, including its redirect chain and response body, has a 60-second
 timeout. Set `TWINS_HTTP_TIMEOUT` to 1..300 seconds to change it. A timed-out
 mutation is never retried automatically; inspect the current state first.
 
+HTTP requests advertise gzip by default and transparently decode compressed
+responses. Servers that return an uncompressed body continue to work. Set
+`TWINS_HTTP_COMPRESSION=identity` to disable compression negotiation for a
+comparison or transport diagnosis (`gzip` restores the default). Decoded bodies
+are limited to 32 MiB. Invalid gzip checksums, truncated streams, trailing junk,
+and unsupported content encodings fail before HTML parsing.
+
 For non-interactive use, `TWINS_USERNAME`, `TWINS_PASSWORD`, and
 `--password-stdin` are supported. Remove the local session with:
 
@@ -109,6 +116,7 @@ partial snapshots. With `--json`, operational failures and invalid module
 selection return exit status 1 and a sanitized JSON error on stderr, such as
 `{"error":{"code":"authentication_required"}}`. HTTP failures also include
 `httpStatus`. Error output omits server content, URLs, and session details.
+Request deadlines use the distinct `timeout` code.
 Command-line syntax errors still use the argument parser's usual diagnostics.
 
 ### Timetable profiling
@@ -123,36 +131,46 @@ It also works with `--module MODULE`. Normal stdout is unchanged; stderr gains
 one JSON line under `profile`, with `version: 1`, operation outcome, total
 `wallMs`/`cpuMs`, stage timings, and HTTP-hop timings. The stages cover session
 load/save, initial flow, module fetches, HTML parsing, page/selection checks,
-timetable parsing, and output. HTTP records include status, response-body byte
-count, `headersMs`, and `bodyMs`. Batch profiles also report whether the initial
+timetable parsing, and output. HTTP records include status, decoded response
+`bytes`, encoded response `wireBytes`, `headersMs`, and `bodyMs`. Batch profiles
+also report whether the initial
 flow contained a recognized timetable and its selected module when identifiable.
 Profiles contain no URLs, cookies, flow keys, course data, or raw page text.
 
 `headersMs` includes connection setup and server time through response headers;
-it is not server processing time alone. Body bytes count the materialized body,
-not wire traffic. Nested stages overlap, so do not sum them. Total timing covers
+it is not server processing time alone. `bytes` counts the materialized body;
+`wireBytes` counts the encoded HTTP body after transfer framing, excluding HTTP
+headers and TLS overhead. `bodyMs` includes body consumption and content decoding.
+Nested stages overlap, so do not sum them. Total timing covers
 the CLI operation, excluding Nix and process startup; measure the runner's wall
 time separately. On an operational failure, the profile line precedes the usual
 error line and the exit status is unchanged. Without `--profile`, stderr keeps
 its existing format. Argument-parser syntax errors do not emit a profile.
 
-For an experimental connection-reuse comparison, run both variants:
+Timetable reads reuse HTTP connections by default for both single modules and
+`--all`. For a comparison with connection reuse disabled, run both variants:
 
 ```console
 twins timetable --all --json --profile
-twins timetable --all --json --profile --reuse-connections
+twins timetable --all --json --profile --no-reuse-connections
 ```
 
-`--reuse-connections` requires both `--all` and `--profile`; it is not the default
-transport. The experiment uses a GET-only pool with one connection at a time,
-pipeline depth one, and no automatic retries. Requests remain sequential and
-the pool closes at the end of the read, including failures. Profiles identify
-`transport` as `default` or `reuse`; `connectionsCreated` is `null` for the default
-transport, or the number of connection objects created by the experimental
-pool. This count does not prove successful socket connections. Compare complete
-timetable outputs as well as timings before drawing conclusions.
+`--no-reuse-connections` also works with `--module MODULE` and without profiling
+when diagnosing transport problems. The GET-only pool uses one connection at a
+time, pipeline depth one, and no automatic retries. Requests remain sequential
+and the pool closes at the end of the read, including failures. Registration
+changes do not use this pool. Profiles identify `transport` as `reuse`, or
+`default` when reuse is disabled; `connectionsCreated` is the number of
+connection objects created by the pool, or `null` when reuse is disabled. This
+count does not prove successful socket connections. Compare complete timetable
+outputs as well as timings before drawing conclusions.
 
 ### Notice pagination and completeness
+
+Notice listing reuses one GET-only connection pool for pagination after the
+search POST completes. The search POST remains outside the pool. Use
+`notices --no-reuse-connections` for a diagnostic comparison. Traversal remains
+sequential with no automatic replay, and every exit path closes the pool.
 
 Notice searches follow explicit Next links and the observed CampusSquare
 `_eventId_paging` / `_pageCount` links without opening notice bodies. The

@@ -181,6 +181,7 @@ let test_safe_errors () =
         (Authentication_required, "authentication_required");
         (Invalid_argument private_text, "invalid_argument");
         (Protocol_error private_text, "protocol_error");
+        (Timeout private_text, "timeout");
         (Io_error private_text, "io_error");
         (Unexpected_error private_text, "unexpected_error");
         (Cancelled private_text, "cancelled");

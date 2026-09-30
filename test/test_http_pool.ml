@@ -12,6 +12,10 @@ type fixture = {
 let close_noerr socket =
   Lwt.catch (fun () -> Lwt_unix.close socket) (fun _ -> Lwt.return_unit)
 
+(* Produced independently with Python's gzip.compress, mtime=0. *)
+let gzip_body =
+  "\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff\x4b\xce\xcf\x2d\x28\x4a\x2d\x2e\x4e\x4d\x51\x48\xcb\xac\x28\x29\x2d\x4a\x55\xf0\xf7\x06\x00\xbe\x30\xc0\x62\x15\x00\x00\x00"
+
 let with_server operation =
   let listener = Lwt_unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
   Lwt_main.run
@@ -47,6 +51,18 @@ let with_server operation =
           else if path = "/hang" then
             (* Wait for EOF to prove client cancellation closes the transport. *)
             Lwt_io.read_char_opt ic >|= fun _ -> ()
+          else if path = "/gzip" || path = "/bad-gzip" then
+            let body = if path = "/gzip" then gzip_body else "invalid gzip" in
+            Lwt_io.write oc
+              (Printf.sprintf
+                 "HTTP/1.1 200 OK\r\n\
+                  Content-Length: %d\r\n\
+                  Content-Encoding: gzip\r\n\
+                  Connection: keep-alive\r\n\
+                  \r\n\
+                  %s"
+                 (String.length body) body)
+            >>= fun () -> Lwt_io.flush oc >>= serve
           else
             Lwt_io.write oc
               "HTTP/1.1 200 OK\r\n\
@@ -178,6 +194,116 @@ let test_timeout_cleanup () =
       Alcotest.(check int)
         "timeout restores default transport" 2 !(fixture.opened))
 
+let test_compressed_reuse () =
+  with_server (fun fixture ->
+      let events = ref [] in
+      Profile.run ~enabled:true
+        ~emit:(fun value -> events := value :: !events)
+        (fun () ->
+          Http_client.with_reused_connections (fun () ->
+              let _, _, body = send fixture "/gzip" `GET in
+              Alcotest.(check string)
+                "gzip body decoded" "compressed fixture OK" body;
+              let _, _, body = send fixture "/" `GET in
+              Alcotest.(check string) "next response intact" "OK" body;
+              Alcotest.(check int)
+                "fully drained gzip reuses physical connection" 1
+                !(fixture.opened)));
+      pump ();
+      Alcotest.(check int) "compression pool closes" 1 !(fixture.closed);
+      let open Yojson.Safe.Util in
+      let hops =
+        List.hd !events |> member "profile" |> member "http" |> to_list
+      in
+      let first = List.hd hops in
+      Alcotest.(check int)
+        "decoded size in profile" 21
+        (first |> member "bytes" |> to_int);
+      Alcotest.(check int)
+        "encoded size in profile" (String.length gzip_body)
+        (first |> member "wireBytes" |> to_int);
+      expect_failure (fun () ->
+          Http_client.with_reused_connections (fun () ->
+              ignore (send fixture "/bad-gzip" `GET)));
+      pump ();
+      Alcotest.(check int) "decoding failure closes pool" 2 !(fixture.closed);
+      Alcotest.(check int)
+        "decoding failure does not retry" 3 !(fixture.requests);
+      ignore (send fixture "/" `GET);
+      pump ();
+      Alcotest.(check int)
+        "decoding failure restores transport" 3 !(fixture.opened))
+
+let test_timetable_defaults () =
+  (* Loading this incompatible, synthetic session fails before any TWINS
+     request. It lets the public read APIs select their real transport while
+     keeping this wiring/cleanup regression entirely offline. *)
+  let session_file = Filename.temp_file "twins-timetable-pool-" ".session" in
+  Fun.protect
+    ~finally:(fun () -> Sys.remove session_file)
+    (fun () ->
+      let channel = open_out session_file in
+      output_string channel "# legacy fixture\nsid\tfake-fixture\n";
+      close_out channel;
+      let module_ = List.hd Twins.Module.all in
+      let reads =
+        [
+          ( "single default",
+            "reuse",
+            fun () -> Twins.timetable ~session_file module_ |> Result.map ignore
+          );
+          ( "batch default",
+            "reuse",
+            fun () -> Twins.timetable_all ~session_file () |> Result.map ignore
+          );
+          ( "single opt-out",
+            "default",
+            fun () ->
+              Twins.timetable ~session_file ~reuse_connections:false module_
+              |> Result.map ignore );
+          ( "batch opt-out",
+            "default",
+            fun () ->
+              Twins.timetable_all ~session_file ~reuse_connections:false ()
+              |> Result.map ignore );
+        ]
+      in
+      with_server (fun fixture ->
+          List.iter
+            (fun (label, transport, read) ->
+              let emitted = ref [] in
+              let check_failure () =
+                match read () with
+                | Error (Error.Protocol_error _) -> ()
+                | Error error -> Alcotest.fail (Error.to_string error)
+                | Ok () -> Alcotest.fail "expected incompatible session failure"
+              in
+              (* Reuse is supported without profiling, too. *)
+              check_failure ();
+              Profile.run ~enabled:true
+                ~emit:(fun event -> emitted := event :: !emitted)
+                check_failure;
+              let open Yojson.Safe.Util in
+              let profile = List.hd !emitted |> member "profile" in
+              Alcotest.(check string)
+                label transport
+                (profile |> member "transport" |> to_string);
+              Alcotest.(check int)
+                "session failure made no HTTP requests" 0
+                (profile |> member "http" |> to_list |> List.length);
+              (* A leaking pool would reuse this pair after the API returns. *)
+              let opened_before = !(fixture.opened) in
+              ignore (send fixture "/" `GET);
+              ignore (send fixture "/" `GET);
+              pump ();
+              Alcotest.(check int)
+                "failed read restores independent transport" (opened_before + 2)
+                !(fixture.opened);
+              Alcotest.(check int)
+                "failed read leaves no pooled connection" !(fixture.opened)
+                !(fixture.closed))
+            reads))
+
 let () =
   Alcotest.run "read-only connection reuse"
     [
@@ -189,5 +315,9 @@ let () =
           Alcotest.test_case "no automatic retry" `Quick test_no_retry;
           Alcotest.test_case "exception cleanup" `Quick test_exception_cleanup;
           Alcotest.test_case "timeout cleanup" `Quick test_timeout_cleanup;
+          Alcotest.test_case "gzip consumption, connection reuse, and cleanup"
+            `Quick test_compressed_reuse;
+          Alcotest.test_case "public timetable defaults, opt-out, and cleanup"
+            `Quick test_timetable_defaults;
         ] );
     ]

@@ -18,9 +18,19 @@ let validate_uri uri =
     Internal_error.protocolf
       "blocked HTTP target outside the TWINS HTTPS origin"
 
+let compression_encoding () =
+  match Sys.getenv_opt "TWINS_HTTP_COMPRESSION" with
+  | None | Some "gzip" -> "gzip"
+  | Some "identity" -> "identity"
+  | Some _ ->
+      Internal_error.invalidf "TWINS_HTTP_COMPRESSION must be gzip or identity"
+
 let headers session uri extra =
   let headers = Cohttp.Header.remove extra "cookie" in
   let headers = Cohttp.Header.add headers "user-agent" user_agent in
+  let headers =
+    Cohttp.Header.replace headers "accept-encoding" (compression_encoding ())
+  in
   let cookie = Session.cookie_header session uri in
   if cookie = "" then headers else Cohttp.Header.add headers "cookie" cookie
 
@@ -45,9 +55,17 @@ let send_with ~call ~read_body ~headers meth uri body =
         Cohttp.Response.status response |> Cohttp.Code.code_of_status
       in
       Profile.http_headers hop ~status;
-      read_body response_body >|= fun body ->
-      Profile.http_complete hop ~bytes:(String.length body);
-      (status, Cohttp.Response.headers response, body))
+      read_body response_body >|= fun encoded_body ->
+      let response_headers = Cohttp.Response.headers response in
+      let body =
+        (* HEAD and these statuses have no representation body to decode, even
+           when response headers describe the corresponding GET resource. *)
+        if meth = `HEAD || status = 204 || status = 304 then encoded_body
+        else Http_compression.decode response_headers encoded_body
+      in
+      Profile.http_complete hop ~bytes:(String.length body)
+        ~wire_bytes:(String.length encoded_body);
+      (status, response_headers, body))
     (fun exn ->
       Profile.http_failed hop;
       Lwt.fail exn)
@@ -138,7 +156,7 @@ let timeout_seconds () =
 let with_timeout seconds operation =
   try Lwt_main.run (Lwt_unix.with_timeout seconds operation)
   with Lwt_unix.Timeout ->
-    Internal_error.protocolf
+    Internal_error.timeoutf
       "TWINS HTTP request timed out; a submitted change may have succeeded; \
        inspect current state before retrying"
 

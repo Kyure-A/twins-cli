@@ -219,11 +219,16 @@ let test_bounds () =
   expect_error (fun () -> run_request send);
   Alcotest.(check int) "redirect cap" 9 !calls;
   let cancelled = ref false in
-  expect_error (fun () ->
-      Http_client.with_timeout 0.01 (fun () ->
-          let promise = Lwt_unix.sleep 10. in
-          Lwt.on_cancel promise (fun () -> cancelled := true);
-          promise));
+  let result =
+    Internal_error.protect (fun () ->
+        Http_client.with_timeout 0.01 (fun () ->
+            let promise = Lwt_unix.sleep 10. in
+            Lwt.on_cancel promise (fun () -> cancelled := true);
+            promise))
+  in
+  (match result with
+  | Error (Error.Timeout _) -> ()
+  | _ -> Alcotest.fail "timeout must remain distinct from a protocol failure");
   Alcotest.(check bool) "timeout cancels request" true !cancelled
 
 let () =

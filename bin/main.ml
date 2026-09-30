@@ -199,13 +199,15 @@ let timetable_command =
       value & flag
       & info [ "profile" ] ~doc:"取得処理の機密情報を含まない計測 JSON を標準エラーに出力します。")
   in
-  let reuse_connections =
+  let no_reuse_connections =
     Arg.(
       value & flag
-      & info [ "reuse-connections" ]
-          ~doc:"--all --profile の比較計測でのみ HTTP 接続を再利用します。")
+      & info [ "no-reuse-connections" ]
+          ~doc:"診断や比較計測のため、既定で有効な HTTP 接続の再利用を無効にします。")
   in
-  let execute session_file selected_module all json profile reuse_connections =
+  let execute session_file selected_module all json profile no_reuse_connections
+      =
+    let reuse_connections = not no_reuse_connections in
     run ~json_errors:json (fun () ->
         Profile.run ~enabled:profile
           ~emit:(fun report ->
@@ -213,11 +215,6 @@ let timetable_command =
             output_char stderr '\n';
             flush stderr)
           (fun () ->
-            if reuse_connections && ((not all) || not profile) then
-              raise
-                (Cli_error
-                   (Error.Invalid_argument
-                      "--reuse-connections requires --all --profile"));
             let snapshots =
               match (all, selected_module) with
               | true, None ->
@@ -225,7 +222,11 @@ let timetable_command =
                   |> unwrap
               | false, Some slug ->
                   let module_ = Twins.Module.of_string slug |> unwrap in
-                  [ (module_, Twins.timetable ?session_file module_ |> unwrap) ]
+                  [
+                    ( module_,
+                      Twins.timetable ?session_file ~reuse_connections module_
+                      |> unwrap );
+                  ]
               | _ ->
                   raise
                     (Cli_error
@@ -265,7 +266,7 @@ let timetable_command =
     (Cmd.info "timetable" ~doc:"履修時間割を表示します。")
     Term.(
       const execute $ session $ selected_module $ all $ json $ profile
-      $ reuse_connections)
+      $ no_reuse_connections)
 
 let course_code =
   Arg.(required & pos 0 (some string) None & info [] ~docv:"COURSE_CODE")
@@ -464,11 +465,19 @@ let notices_command =
     Arg.(
       value & flag & info [ "metadata" ] ~doc:"items と取得範囲の完全性を含む JSON を出力します。")
   in
-  let execute session_file kind unread title limit all max_pages metadata json =
+  let no_reuse_connections =
+    Arg.(
+      value & flag
+      & info [ "no-reuse-connections" ]
+          ~doc:"比較診断用に、掲示一覧のページ送りで HTTP 接続を再利用しません。")
+  in
+  let execute session_file kind unread title limit all max_pages metadata json
+      no_reuse_connections =
     run (fun () ->
         let result =
           Twins.notices_with_metadata ?session_file ~all ~max_pages ~kind
-            ~unread ~title ~limit ()
+            ~reuse_connections:(not no_reuse_connections) ~unread ~title ~limit
+            ()
           |> unwrap
         in
         let notices = result.items in
@@ -500,7 +509,7 @@ let notices_command =
     (Cmd.info "notices" ~doc:"授業・一般掲示を検索します。")
     Term.(
       const execute $ session $ notice_kind $ unread $ title $ limit $ all
-      $ max_pages $ metadata $ json)
+      $ max_pages $ metadata $ json $ no_reuse_connections)
 
 let notice_command =
   let seq = Arg.(required & pos 0 (some string) None & info [] ~docv:"ID") in

@@ -27,5 +27,5 @@ type hop
 
 val start_http : unit -> hop option
 val http_headers : hop option -> status:int -> unit
-val http_complete : hop option -> bytes:int -> unit
+val http_complete : hop option -> bytes:int -> wire_bytes:int -> unit
 val http_failed : hop option -> unit

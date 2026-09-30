@@ -13,6 +13,7 @@
  (depends
   (ocaml (>= 5.1))
   dune
+  camlzip
   cmdliner
   cohttp-lwt-unix
   (alcotest :with-test)

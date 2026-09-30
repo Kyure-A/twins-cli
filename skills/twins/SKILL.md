@@ -78,6 +78,8 @@ Prefer JSON whenever the command supports it:
 - For complete mirror reads use `notices --all --max-pages 20 --metadata --json`;
   inspect `completeness` and `reason`. Never treat a partial result as a complete
   replacement. Unknown JavaScript pagers are reported as partial.
+- Notice pagination reuses GET connections after the search POST by default.
+  Use `--no-reuse-connections` only for a requested transport comparison.
 - Read one notice with `notice --kind classes|general ID`.
 - Get cancellations with `cancellations --from YYYY-MM-DD --to YYYY-MM-DD`; add `--all` only when the user wants unregistered courses too.
 - List known low-level flows with `menu --json`.
@@ -111,21 +113,29 @@ On failure the profile line precedes the existing error line; distinguish the
 two objects instead of treating all stderr as a single error document.
 
 Nested stages overlap and must not be summed. HTTP `headersMs` includes
-connection setup and server response time; `bodyMs` covers body consumption.
-Body bytes are the materialized response size, not wire traffic. The total
+connection setup and server response time; `bodyMs` covers body consumption
+and content decoding. `bytes` is the materialized response size; `wireBytes`
+is the encoded HTTP body after transfer framing, excluding headers and TLS.
+Requests advertise gzip by default; `TWINS_HTTP_COMPRESSION=identity` disables
+negotiation for a requested comparison. Servers may return identity either way,
+so compare `wireBytes` and complete outputs before claiming compression gains.
+Malformed gzip, unsupported encodings, and decoded bodies over 32 MiB fail
+before parsing. The total
 excludes Nix and process startup, so compare it with runner wall time when
 investigating that overhead. Report measured timings separately from proposed
 optimizations; an unidentified initial module does not justify skipping its
 explicit selection.
 
-For a requested connection-reuse experiment, compare the normal profiled batch
-with `timetable --all --json --profile --reuse-connections`. This experimental
-flag requires both `--all` and `--profile`; leave it off routine reads. It uses
-sequential GET requests, one connection at a time, pipeline depth one, and no
-automatic retries, then closes the pool. The profile reports `transport` as
-`default` or `reuse`. `connectionsCreated` is unknown (`null`) for the default
-transport; the reuse count measures created connection objects, not successful
-sockets. Verify equality of complete timetable outputs when comparing variants.
+Timetable reads reuse HTTP connections by default, including single-module
+reads and reads without profiling. For a requested comparison, compare the
+normal profiled read with `--no-reuse-connections`; this diagnostic option also
+works without `--profile`. Reuse uses sequential GET requests, one connection
+at a time, pipeline depth one, and no automatic retries, then closes the pool
+on success or failure. Registration changes do not use this pool. The profile
+reports `transport` as `reuse`, or `default` with reuse disabled.
+`connectionsCreated` is unknown (`null`) with reuse disabled; the reuse count
+measures created connection objects, not successful sockets. Verify equality of
+complete timetable outputs when comparing variants.
 
 ## Change registration
 
@@ -189,7 +199,7 @@ Timetable JSON reads emit stdout only after the entire request succeeds; do not
 replace a local mirror after a failed batch. Operational failures and invalid
 module selection return exit status 1 with `{"error":{"code":"..."}}` on
 stderr; HTTP failures also include `httpStatus`. Codes include
-`authentication_required`, `http_error`, `protocol_error`, `io_error`,
+`authentication_required`, `http_error`, `protocol_error`, `timeout`, `io_error`,
 `invalid_argument`, `cancelled`, and `unexpected_error`. These errors omit
 server content, URLs, and session details. Argument-parser syntax errors retain
 their usual diagnostics.

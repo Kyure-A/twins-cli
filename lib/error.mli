@@ -3,6 +3,7 @@ type t =
   | Invalid_argument of string
   | Http_error of { status : int; uri : Uri.t }
   | Protocol_error of string
+  | Timeout of string
   | Cancelled of string
   | Io_error of string
   | Unexpected_error of string

@@ -56,7 +56,8 @@ let test_opt_in () =
       (fun () ->
         Profile.measure Profile.Session_load (fun () ->
             Alcotest.(check bool) "disabled" false (Profile.enabled ());
-            Profile.http_complete (Profile.start_http ()) ~bytes:23;
+            Profile.http_complete (Profile.start_http ()) ~bytes:23
+              ~wire_bytes:23;
             "unchanged result"))
   in
   eq "value preserved" "unchanged result" result;
@@ -123,6 +124,10 @@ let test_redirect_hops () =
         "body byte count only"
         (String.length private_text)
         (hop |> member "bytes" |> to_int);
+      Alcotest.(check int)
+        "identity wire body byte count"
+        (String.length private_text)
+        (hop |> member "wireBytes" |> to_int);
       eq "hop succeeded" "success" (hop |> member "outcome" |> to_string))
     hops
 
@@ -156,6 +161,8 @@ let test_http_failure ~after_headers () =
     (hop |> member "status" |> Yojson.Safe.to_string);
   eq "incomplete body has no byte count" "null"
     (hop |> member "bytes" |> Yojson.Safe.to_string);
+  eq "incomplete body has no wire byte count" "null"
+    (hop |> member "wireBytes" |> Yojson.Safe.to_string);
   Alcotest.(check bool)
     "body timing available only after headers" after_headers
     (member "bodyMs" hop <> `Null)

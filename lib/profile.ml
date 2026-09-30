@@ -208,7 +208,7 @@ let start_http () =
 let http_headers hop ~status =
   Option.iter (fun hop -> hop.headers <- Some (now (), status)) hop
 
-let finish_http hop success bytes =
+let finish_http hop success bytes wire_bytes =
   Option.iter
     (fun hop ->
       if not hop.finished then (
@@ -237,6 +237,10 @@ let finish_http hop success bytes =
                  match bytes with
                  | None -> `Null
                  | Some bytes -> `Int (max 0 bytes) );
+               ( "wireBytes",
+                 match wire_bytes with
+                 | None -> `Null
+                 | Some bytes -> `Int (max 0 bytes) );
                ( "headersMs",
                  `Float (milliseconds hop.started.wall headers_time.wall) );
                ("bodyMs", body_time);
@@ -246,5 +250,7 @@ let finish_http hop success bytes =
           :: hop.state.http))
     hop
 
-let http_complete hop ~bytes = finish_http hop true (Some bytes)
-let http_failed hop = finish_http hop false None
+let http_complete hop ~bytes ~wire_bytes =
+  finish_http hop true (Some bytes) (Some wire_bytes)
+
+let http_failed hop = finish_http hop false None None

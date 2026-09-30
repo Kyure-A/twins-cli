@@ -8,6 +8,9 @@ let invalidf fmt =
 let protocolf fmt =
   Printf.ksprintf (fun message -> fail (Error.Protocol_error message)) fmt
 
+let timeoutf fmt =
+  Printf.ksprintf (fun message -> fail (Error.Timeout message)) fmt
+
 let authentication_required () = fail Error.Authentication_required
 let http ~status ~uri = fail (Error.Http_error { status; uri })
 

@@ -10,6 +10,7 @@ bug-reports: "https://github.com/Kyure-A/twins-cli/issues"
 depends: [
   "ocaml" {>= "5.1"}
   "dune" {>= "3.12"}
+  "camlzip"
   "cmdliner"
   "cohttp-lwt-unix"
   "alcotest" {with-test}

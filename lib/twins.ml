@@ -434,10 +434,13 @@ let timetable_exn ?session_file module_ =
       Profile.measure ?module_:profile_module Profile.Timetable_parse (fun () ->
           parse_timetable_exn module_ page.soup))
 
-let timetable ?session_file module_ =
-  Internal_error.protect (fun () -> timetable_exn ?session_file module_)
+let timetable ?session_file ?(reuse_connections = true) module_ =
+  Internal_error.protect (fun () ->
+      let read () = timetable_exn ?session_file module_ in
+      if reuse_connections then Http_client.with_reused_connections read
+      else read ())
 
-let timetable_all ?session_file ?(reuse_connections = false) () =
+let timetable_all ?session_file ?(reuse_connections = true) () =
   Internal_error.protect (fun () ->
       let read () =
         with_session ?session_file (fun session ->
@@ -476,10 +479,7 @@ let timetable_all ?session_file ?(reuse_connections = false) () =
                   (fun () -> parse_timetable_exn module_ page.soup))
               Module.all)
       in
-      if reuse_connections then (
-        if not (Profile.enabled ()) then
-          Internal_error.invalidf "connection reuse requires profiling";
-        Http_client.with_reused_connections read)
+      if reuse_connections then Http_client.with_reused_connections read
       else read ())
 
 let timetable_snapshots_to_yojson snapshots =
@@ -717,21 +717,25 @@ let collect_notices session ~limit ~max_pages first =
     ~id:(fun notice -> notice.seq)
     ~limit ~max_pages (1, first)
 
-let notices_with_metadata ?session_file ?(all = false) ?(max_pages = 20) ~kind
-    ~unread ~title ~limit () =
+let notices_with_metadata ?session_file ?(all = false) ?(max_pages = 20)
+    ?(reuse_connections = true) ~kind ~unread ~title ~limit () =
   if limit < 0 then Error (Error.Invalid_argument "--limit は 0 以上で指定してください。")
   else if max_pages < 1 || max_pages > 100 then
     Error (Error.Invalid_argument "--max-pages must be 1..100")
   else
     Internal_error.protect (fun () ->
         with_session ?session_file (fun session ->
-            let page = notices_page session ~kind ~unread ~title in
-            collect_notices session
-              ~limit:(if all then None else Some limit)
-              ~max_pages page))
+            Notice_read.run ~reuse_connections
+              ~search:(fun () -> notices_page session ~kind ~unread ~title)
+              ~collect:(fun page ->
+                collect_notices session
+                  ~limit:(if all then None else Some limit)
+                  ~max_pages page)
+              ()))
 
-let notices ?session_file ~kind ~unread ~title ~limit () =
-  notices_with_metadata ?session_file ~kind ~unread ~title ~limit ()
+let notices ?session_file ?reuse_connections ~kind ~unread ~title ~limit () =
+  notices_with_metadata ?session_file ?reuse_connections ~kind ~unread ~title
+    ~limit ()
   |> Result.map (fun result -> result.Notice_pagination.items)
 
 let notice_detail_exn ?session_file ~kind seq =

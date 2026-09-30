@@ -43,6 +43,7 @@
             duneVersion = "3";
 
             propagatedBuildInputs = with ocamlPackages; [
+              camlzip
               cmdliner
               cohttp-lwt-unix
               lambdasoup

@@ -22,7 +22,7 @@ grep -q -- '-y, --yes' <<<"$registration_help"
 timetable_help=$("${cli[@]}" timetable --help=plain)
 grep -q -- '--all' <<<"$timetable_help"
 grep -q -- '--profile' <<<"$timetable_help"
-grep -q -- '--reuse-connections' <<<"$timetable_help"
+grep -q -- '--no-reuse-connections' <<<"$timetable_help"
 
 menu_output=$("${cli[@]}" menu)
 grep -q $'registration\tRSW0001000-flow' <<<"$menu_output"
@@ -73,8 +73,7 @@ expect_profiled_timetable_error() {
 expect_timetable_json_error invalid_argument
 expect_timetable_json_error invalid_argument --all --module autumn-a
 expect_timetable_json_error invalid_argument --module winter-z
-expect_timetable_json_error invalid_argument --all --reuse-connections
-expect_profiled_timetable_error invalid_argument --module autumn-a --reuse-connections
+expect_profiled_timetable_error invalid_argument --module winter-z --no-reuse-connections
 grep -Fq '"stages":[]' <<<"$profile_line"
 grep -Fq '"transport":"default"' <<<"$profile_line"
 grep -Fq '"connectionsCreated":null' <<<"$profile_line"
@@ -135,6 +134,7 @@ notice_help=$("${cli[@]}" notices --help=plain)
 grep -q -- '--all' <<<"$notice_help"
 grep -q -- '--metadata' <<<"$notice_help"
 grep -q -- '--max-pages=N' <<<"$notice_help"
+grep -q -- '--no-reuse-connections' <<<"$notice_help"
 
 set +e
 invalid_pages=$("${cli[@]}" notices --max-pages 0 --metadata --json --session "$session_file" 2>&1)
@@ -159,12 +159,27 @@ cmp "$session_file" "$session_file.before"
 # The synthetic legacy session fails before any HTTP request or cookie write.
 expect_profiled_timetable_error protocol_error --all
 grep -Fq '"stage":"session_load","outcome":"failure"' <<<"$profile_line"
+grep -Fq '"transport":"reuse"' <<<"$profile_line"
+grep -Fq '"connectionsCreated":0' <<<"$profile_line"
+cmp "$session_file" "$session_file.before"
+
+expect_profiled_timetable_error protocol_error --all --no-reuse-connections
+grep -Fq '"stage":"session_load","outcome":"failure"' <<<"$profile_line"
 grep -Fq '"transport":"default"' <<<"$profile_line"
 grep -Fq '"connectionsCreated":null' <<<"$profile_line"
 cmp "$session_file" "$session_file.before"
 
-expect_profiled_timetable_error protocol_error --all --reuse-connections
-grep -Fq '"stage":"session_load","outcome":"failure"' <<<"$profile_line"
+expect_profiled_timetable_error protocol_error --module spring-a
 grep -Fq '"transport":"reuse"' <<<"$profile_line"
 grep -Fq '"connectionsCreated":0' <<<"$profile_line"
+cmp "$session_file" "$session_file.before"
+
+expect_profiled_timetable_error protocol_error --module spring-a --no-reuse-connections
+grep -Fq '"transport":"default"' <<<"$profile_line"
+grep -Fq '"connectionsCreated":null' <<<"$profile_line"
+cmp "$session_file" "$session_file.before"
+
+# The diagnostic opt-out also works for ordinary reads without profiling.
+expect_timetable_json_error protocol_error --module spring-a --no-reuse-connections
+expect_timetable_json_error protocol_error --all --no-reuse-connections
 cmp "$session_file" "$session_file.before"
