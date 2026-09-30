@@ -7,6 +7,7 @@ type fixture = {
   opened : int ref;
   closed : int ref;
   requests : int ref;
+  after_close_bytes : int ref;
 }
 
 let close_noerr socket =
@@ -27,6 +28,7 @@ let with_server operation =
     | _ -> assert false
   in
   let opened = ref 0 and closed = ref 0 and requests = ref 0 in
+  let after_close_bytes = ref 0 in
   let sockets = ref [] and handlers = ref [] in
   let handle socket =
     let ic = Lwt_io.of_fd ~mode:Lwt_io.input socket in
@@ -51,6 +53,52 @@ let with_server operation =
           else if path = "/hang" then
             (* Wait for EOF to prove client cancellation closes the transport. *)
             Lwt_io.read_char_opt ic >|= fun _ -> ()
+          else if
+            List.mem path
+              [
+                "/close";
+                "/close-tokens";
+                "/http10";
+                "/http10-keepalive";
+                "/http11-implicit";
+                "/bad-gzip-close";
+              ]
+          then (
+            let version =
+              if String.starts_with ~prefix:"/http10" path then "HTTP/1.0"
+              else "HTTP/1.1"
+            in
+            let extra =
+              match path with
+              | "/close" -> "Connection: close\r\n"
+              | "/close-tokens" -> "Connection: Keep-Alive, ClOsE\r\n"
+              | "/http10-keepalive" -> "Connection: keep-alive\r\n"
+              | "/bad-gzip-close" ->
+                  "Connection: close\r\nContent-Encoding: gzip\r\n"
+              | _ -> ""
+            in
+            let body =
+              if path = "/bad-gzip-close" then "invalid gzip" else "OK"
+            in
+            Lwt_io.write oc
+              (Printf.sprintf "%s 200 OK\r\nContent-Length: %d\r\n%s\r\n"
+                 version (String.length body) extra)
+            >>= fun () ->
+            (* Split the response to catch retiring a connection at headers,
+               before the body has been consumed. *)
+            Lwt_io.write oc (String.sub body 0 1) >>= fun () ->
+            Lwt_io.flush oc >>= fun () ->
+            Lwt.pause () >>= fun () ->
+            Lwt_io.write oc (String.sub body 1 (String.length body - 1))
+            >>= fun () ->
+            Lwt_io.flush oc >>= fun () ->
+            if path = "/http10-keepalive" || path = "/http11-implicit" then
+              serve ()
+            else
+              (* Deliberately leave EOF pending. A correct client honors the
+                 response's close semantics before sending another request. *)
+              Lwt_io.read_char_opt ic >|= fun byte ->
+              if byte <> None then incr after_close_bytes)
           else if path = "/gzip" || path = "/bad-gzip" then
             let body = if path = "/gzip" then gzip_body else "invalid gzip" in
             Lwt_io.write oc
@@ -96,6 +144,7 @@ let with_server operation =
       opened;
       closed;
       requests;
+      after_close_bytes;
     }
   in
   Fun.protect
@@ -151,6 +200,55 @@ let test_get_only () =
       Alcotest.(check int)
         "rejected before opening connection" 0 !(fixture.opened);
       Alcotest.(check int) "no request sent" 0 !(fixture.requests))
+
+let test_nonpersistent_responses () =
+  List.iter
+    (fun path ->
+      with_server (fun fixture ->
+          Http_client.with_reused_connections (fun () ->
+              let _, _, body = send fixture path `GET in
+              Alcotest.(check string) "body drained before retirement" "OK" body;
+              (* There is no sleep between reads: the next unsent GET must use
+                 a new socket even before the old peer reports EOF. *)
+              ignore (send fixture "/" `GET);
+              ignore (send fixture "/" `GET);
+              Alcotest.(check int)
+                "fresh connection then reuse" 2 !(fixture.opened);
+              Alcotest.(check int) "each GET sent once" 3 !(fixture.requests);
+              Alcotest.(check int)
+                "no bytes sent after close response" 0
+                !(fixture.after_close_bytes));
+          pump ();
+          Alcotest.(check int)
+            "both connections closed on scope exit" 2 !(fixture.closed)))
+    [ "/close"; "/close-tokens"; "/http10" ];
+  List.iter
+    (fun path ->
+      with_server (fun fixture ->
+          Http_client.with_reused_connections (fun () ->
+              ignore (send fixture path `GET);
+              ignore (send fixture "/" `GET);
+              Alcotest.(check int)
+                "persistent response still reuses" 1 !(fixture.opened);
+              Alcotest.(check int) "both GETs sent once" 2 !(fixture.requests))))
+    [ "/http10-keepalive"; "/http11-implicit" ]
+
+let test_retired_pool_decode_failure () =
+  with_server (fun fixture ->
+      expect_failure (fun () ->
+          Http_client.with_reused_connections (fun () ->
+              ignore (send fixture "/bad-gzip-close" `GET)));
+      pump ();
+      Alcotest.(check int)
+        "retired pool closed before decode failure" 1 !(fixture.closed);
+      Alcotest.(check int) "bad response never replayed" 1 !(fixture.requests);
+      Alcotest.(check int)
+        "retirement opens no replacement socket" 1 !(fixture.opened);
+      ignore (send fixture "/" `POST);
+      ignore (send fixture "/" `POST);
+      pump ();
+      Alcotest.(check int) "default POST transport restored" 3 !(fixture.opened);
+      Alcotest.(check int) "all connections closed" 3 !(fixture.closed))
 
 let test_no_retry () =
   with_server (fun fixture ->
@@ -312,6 +410,10 @@ let () =
           Alcotest.test_case "reuse, complete bodies, cleanup, restore" `Quick
             test_reuse_and_restore;
           Alcotest.test_case "GET only" `Quick test_get_only;
+          Alcotest.test_case "retire nonpersistent responses without replay"
+            `Quick test_nonpersistent_responses;
+          Alcotest.test_case "retirement and decode failure restore transport"
+            `Quick test_retired_pool_decode_failure;
           Alcotest.test_case "no automatic retry" `Quick test_no_retry;
           Alcotest.test_case "exception cleanup" `Quick test_exception_cleanup;
           Alcotest.test_case "timeout cleanup" `Quick test_timeout_cleanup;

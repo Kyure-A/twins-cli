@@ -45,7 +45,8 @@ let redirect_method status meth body =
   | (301 | 302), (`POST | `PUT | `PATCH | `DELETE) -> (`GET, None)
   | _ -> (meth, body)
 
-let send_with ~call ~read_body ~headers meth uri body =
+let send_with ?(on_body_complete = fun _ -> ()) ~call ~read_body ~headers meth
+    uri body =
   let body = Option.map Cohttp_lwt.Body.of_string body in
   let hop = Profile.start_http () in
   Lwt.catch
@@ -56,6 +57,7 @@ let send_with ~call ~read_body ~headers meth uri body =
       in
       Profile.http_headers hop ~status;
       read_body response_body >|= fun encoded_body ->
+      on_body_complete response;
       let response_headers = Cohttp.Response.headers response in
       let body =
         (* HEAD and these statuses have no representation body to decode, even
@@ -74,6 +76,20 @@ let default_call ?body ~headers meth uri =
   Cohttp_lwt_unix.Client.call ?body ~headers meth uri
 
 let current_call = ref default_call
+let current_body_complete = ref (fun (_ : Cohttp.Response.t) -> ())
+
+let response_is_persistent response =
+  let connection =
+    Cohttp.Header.get_multi (Cohttp.Response.headers response) "connection"
+    |> List.concat_map (String.split_on_char ',')
+    |> List.map (fun token -> String.lowercase_ascii (String.trim token))
+  in
+  (not (List.mem "close" connection))
+  &&
+  match Cohttp.Response.version response with
+  | `HTTP_1_1 -> true
+  | `HTTP_1_0 -> List.mem "keep-alive" connection
+  | _ -> false
 
 (* This scope is synchronous, like timetable_all: its operation completes each
    Lwt request before returning. Never install this transport for a mutation or
@@ -95,26 +111,41 @@ let with_reused_connections operation =
     let sleep_ns ns = Lwt_unix.sleep (Int64.to_float ns /. 1_000_000_000.)
   end in
   let module Pool = Cohttp_lwt.Connection_cache.Make (Tracked) (Sleep) in
-  let pool = Pool.create ~retry:0 ~parallel:1 ~depth:1 () in
+  let create_pool () = Pool.create ~retry:0 ~parallel:1 ~depth:1 () in
+  let pool = ref (create_pool ()) in
+  let close_connections () =
+    List.iter Base.close !opened;
+    opened := []
+  in
   let previous = !current_call in
+  let previous_body_complete = !current_body_complete in
   let call ?body ~headers meth uri =
     if meth <> `GET then
       Internal_error.invalidf
         "connection reuse is only available for read-only GET requests";
-    Pool.call pool ?body ~headers meth uri
+    Pool.call !pool ?body ~headers meth uri
+  in
+  let on_body_complete response =
+    if not (response_is_persistent response) then (
+      (* Cohttp 6.2.1 waits for EOF before retiring cached connections. Honor
+         explicit nonpersistence after draining the body, before the next GET
+         can race that EOF. This opens no socket and never replays a request. *)
+      close_connections ();
+      pool := create_pool ())
   in
   Profile.reuse_connections ();
   current_call := call;
+  current_body_complete := on_body_complete;
   Fun.protect
     ~finally:(fun () ->
       current_call := previous;
-      List.iter Base.close !opened;
-      opened := [])
+      current_body_complete := previous_body_complete;
+      close_connections ())
     operation
 
 let send ~headers meth uri body =
-  send_with ~call:!current_call ~read_body:Cohttp_lwt.Body.to_string ~headers
-    meth uri body
+  send_with ~on_body_complete:!current_body_complete ~call:!current_call
+    ~read_body:Cohttp_lwt.Body.to_string ~headers meth uri body
 
 let rec request_lwt ?(send = send) ?body
     ?(extra_headers = Cohttp.Header.init ()) session meth uri redirects =

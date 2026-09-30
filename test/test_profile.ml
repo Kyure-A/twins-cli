@@ -99,7 +99,9 @@ let test_redirect_hops () =
     let status = if !calls = 1 then `Found else `OK in
     Lwt.return (Cohttp.Response.make ~status ~headers (), private_text)
   in
-  let send = Http_client.send_with ~call ~read_body:Lwt.return in
+  let send ~headers meth uri body =
+    Http_client.send_with ~call ~read_body:Lwt.return ~headers meth uri body
+  in
   let result, report =
     capture (fun () ->
         Profile.scope Profile.Initial_flow (fun () ->
