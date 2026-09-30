@@ -21,6 +21,7 @@ grep -q -- '-y, --yes' <<<"$registration_help"
 
 timetable_help=$("${cli[@]}" timetable --help=plain)
 grep -q -- '--all' <<<"$timetable_help"
+grep -q -- '--profile' <<<"$timetable_help"
 
 menu_output=$("${cli[@]}" menu)
 grep -q $'registration\tRSW0001000-flow' <<<"$menu_output"
@@ -122,4 +123,25 @@ cmp "$session_file" "$session_file.before"
 
 # A synthetic legacy file fails during loading, without contacting TWINS.
 expect_timetable_json_error protocol_error --all
+cmp "$session_file" "$session_file.before"
+
+# Profiling preserves the same local failure and adds one separate JSON line.
+# The synthetic legacy session fails before any HTTP request or cookie write.
+profile_status=0
+"${cli[@]}" timetable --all --json --profile --session "$session_file" \
+  > "$smoke_directory/profile.stdout" \
+  2> "$smoke_directory/profile.stderr" || profile_status=$?
+test "$profile_status" -eq 1
+test ! -s "$smoke_directory/profile.stdout"
+{
+  IFS= read -r profile_line
+  IFS= read -r error_line
+  if IFS= read -r extra_line; then
+    exit 1
+  fi
+} < "$smoke_directory/profile.stderr"
+grep -q '^{"profile":{"version":1,"operation":"timetable","outcome":"failure",' <<<"$profile_line"
+grep -q '"stage":"session_load","outcome":"failure"' <<<"$profile_line"
+grep -q '"http":\[\]' <<<"$profile_line"
+test "$error_line" = '{"error":{"code":"protocol_error"}}'
 cmp "$session_file" "$session_file.before"

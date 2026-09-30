@@ -21,30 +21,55 @@ let search_query ~key ~module_code ~term_code =
 (* Some TWINS versions expose the active module in form controls. Validate every
    explicit value when present; navigation links for the other modules are not
    evidence of the active selection. Never include returned values in errors. *)
+let selected_values name soup =
+  let inputs =
+    Soup.select ("input[name='" ^ name ^ "']") soup
+    |> Soup.to_list
+    |> List.filter_map (fun input ->
+        match Soup.attribute "type" input with
+        | Some ("radio" | "checkbox") when Soup.attribute "checked" input = None
+          ->
+            None
+        | _ -> Soup.attribute "value" input)
+  in
+  let selects =
+    Soup.select ("select[name='" ^ name ^ "']") soup
+    |> Soup.to_list
+    |> List.filter_map (fun select ->
+        let option =
+          match Soup.select_one "option[selected]" select with
+          | Some option -> Some option
+          | None -> Soup.select_one "option" select
+        in
+        Option.bind option (Soup.attribute "value"))
+  in
+  inputs @ selects
+
+let selected_module soup =
+  match
+    ( List.sort_uniq String.compare (selected_values "moduleCode" soup),
+      List.sort_uniq String.compare (selected_values "gakkiKbnCode" soup) )
+  with
+  | [ module_code ], [ term_code ] ->
+      let slug =
+        match (module_code, term_code) with
+        | "1", "A" -> "spring-a"
+        | "2", "A" -> "spring-b"
+        | "3", "A" -> "spring-c"
+        | "A", "A" -> "summer"
+        | "4", "B" -> "autumn-a"
+        | "5", "B" -> "autumn-b"
+        | "6", "B" -> "autumn-c"
+        | "B", "B" -> "spring-break"
+        | _ -> ""
+      in
+      Profile.module_of_slug slug
+  | _ -> None
+
 let validate_selection ~module_code ~term_code soup =
   let check name expected =
-    let inputs =
-      Soup.select ("input[name='" ^ name ^ "']") soup
-      |> Soup.to_list
-      |> List.filter_map (fun input ->
-          match Soup.attribute "type" input with
-          | Some ("radio" | "checkbox")
-            when Soup.attribute "checked" input = None ->
-              None
-          | _ -> Soup.attribute "value" input)
-    in
-    let selects =
-      Soup.select ("select[name='" ^ name ^ "']") soup
-      |> Soup.to_list
-      |> List.filter_map (fun select ->
-          let option =
-            match Soup.select_one "option[selected]" select with
-            | Some option -> Some option
-            | None -> Soup.select_one "option" select
-          in
-          Option.bind option (Soup.attribute "value"))
-    in
-    if List.exists (fun value -> value <> expected) (inputs @ selects) then
+    if List.exists (fun value -> value <> expected) (selected_values name soup)
+    then
       Internal_error.protocolf
         "TWINS timetable response does not match the requested module"
   in

@@ -95,6 +95,29 @@ Treat opening a notice as potentially marking it read. When the user asks only t
 
 Return only the academic or account data needed for the request. Do not persist, export, or commit grades, notices, or session data unless explicitly asked.
 
+## Diagnose timetable performance
+
+When investigating fetch latency, add `--profile` to the requested timetable
+read, for example `timetable --all --json --profile`. It supports single-module
+reads too and follows the same authentication policy above. Do not enable it for
+routine reads or perform registration changes to benchmark fetching.
+
+Stdout retains the normal timetable data. Stderr receives one JSON line under
+`profile` with version `1`, success/failure outcome, wall/CPU milliseconds,
+per-stage timings, and HTTP-hop status, body bytes, and timings. Batch profiles
+also identify the initial flow's selected module when recognizable. These
+diagnostics exclude URLs, cookies, flow keys, course data, and raw page text.
+On failure the profile line precedes the existing error line; distinguish the
+two objects instead of treating all stderr as a single error document.
+
+Nested stages overlap and must not be summed. HTTP `headersMs` includes
+connection setup and server response time; `bodyMs` covers body consumption.
+Body bytes are the materialized response size, not wire traffic. The total
+excludes Nix and process startup, so compare it with runner wall time when
+investigating that overhead. Report measured timings separately from proposed
+optimizations; an unidentified initial module does not justify skipping its
+explicit selection.
+
 ## Change registration
 
 Treat `registration add`, `registration remove`, and any `raw --event` submission as account-changing operations.

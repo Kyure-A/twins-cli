@@ -111,6 +111,31 @@ selection return exit status 1 and a sanitized JSON error on stderr, such as
 `httpStatus`. Error output omits server content, URLs, and session details.
 Command-line syntax errors still use the argument parser's usual diagnostics.
 
+### Timetable profiling
+
+Add `--profile` to a timetable read when diagnosing performance:
+
+```console
+twins timetable --all --json --profile
+```
+
+It also works with `--module MODULE`. Normal stdout is unchanged; stderr gains
+one JSON line under `profile`, with `version: 1`, operation outcome, total
+`wallMs`/`cpuMs`, stage timings, and HTTP-hop timings. The stages cover session
+load/save, initial flow, module fetches, HTML parsing, page/selection checks,
+timetable parsing, and output. HTTP records include status, response-body byte
+count, `headersMs`, and `bodyMs`. Batch profiles also report whether the initial
+flow contained a recognized timetable and its selected module when identifiable.
+Profiles contain no URLs, cookies, flow keys, course data, or raw page text.
+
+`headersMs` includes connection setup and server time through response headers;
+it is not server processing time alone. Body bytes count the materialized body,
+not wire traffic. Nested stages overlap, so do not sum them. Total timing covers
+the CLI operation, excluding Nix and process startup; measure the runner's wall
+time separately. On an operational failure, the profile line precedes the usual
+error line and the exit status is unchanged. Without `--profile`, stderr keeps
+its existing format. Argument-parser syntax errors do not emit a profile.
+
 ### Notice pagination and completeness
 
 Notice searches follow explicit Next links and the observed CampusSquare

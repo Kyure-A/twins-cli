@@ -35,14 +35,28 @@ let redirect_method status meth body =
   | (301 | 302), (`POST | `PUT | `PATCH | `DELETE) -> (`GET, None)
   | _ -> (meth, body)
 
-let send ~headers meth uri body =
+let send_with ~call ~read_body ~headers meth uri body =
   let body = Option.map Cohttp_lwt.Body.of_string body in
-  Cohttp_lwt_unix.Client.call ?body ~headers meth uri
-  >>= fun (response, response_body) ->
-  Cohttp_lwt.Body.to_string response_body >|= fun body ->
-  ( Cohttp.Response.status response |> Cohttp.Code.code_of_status,
-    Cohttp.Response.headers response,
-    body )
+  let hop = Profile.start_http () in
+  Lwt.catch
+    (fun () ->
+      call ?body ~headers meth uri >>= fun (response, response_body) ->
+      let status =
+        Cohttp.Response.status response |> Cohttp.Code.code_of_status
+      in
+      Profile.http_headers hop ~status;
+      read_body response_body >|= fun body ->
+      Profile.http_complete hop ~bytes:(String.length body);
+      (status, Cohttp.Response.headers response, body))
+    (fun exn ->
+      Profile.http_failed hop;
+      Lwt.fail exn)
+
+let send ~headers meth uri body =
+  send_with
+    ~call:(fun ?body ~headers meth uri ->
+      Cohttp_lwt_unix.Client.call ?body ~headers meth uri)
+    ~read_body:Cohttp_lwt.Body.to_string ~headers meth uri body
 
 let rec request_lwt ?(send = send) ?body
     ?(extra_headers = Cohttp.Header.init ()) session meth uri redirects =

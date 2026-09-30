@@ -11,11 +11,16 @@ let absolute_uri base href =
   Uri.resolve scheme base (Uri.of_string href)
 
 let checked_page ?session response =
-  Http_client.ensure_success response;
-  let soup = Html.parse (Http_client.body response) in
-  if Html.is_login_page soup || Html.is_auth_error soup then (
-    Option.iter Session.clear session;
-    Internal_error.authentication_required ());
+  Profile.measure Profile.Page_check (fun () ->
+      Http_client.ensure_success response);
+  let soup =
+    Profile.measure Profile.Html_parse (fun () ->
+        Html.parse (Http_client.body response))
+  in
+  Profile.measure Profile.Page_check (fun () ->
+      if Html.is_login_page soup || Html.is_auth_error soup then (
+        Option.iter Session.clear session;
+        Internal_error.authentication_required ()));
   { response; soup }
 
 let get_page session uri = Http_client.get session uri |> checked_page ~session
@@ -44,10 +49,14 @@ let post_event session page ~form_name event replacements =
   post_page session (make_uri "campussquare.do") fields
 
 let with_session ?session_file operation =
-  let session = Session.load ?path:session_file () in
+  let session =
+    Profile.measure Profile.Session_load (fun () ->
+        Session.load ?path:session_file ())
+  in
   Fun.protect
     ~finally:(fun () ->
-      if not (Session.is_empty session) then Session.save session)
+      if not (Session.is_empty session) then
+        Profile.measure Profile.Session_save (fun () -> Session.save session))
     (fun () -> operation session)
 
 let find_login_form soup =
@@ -417,8 +426,13 @@ let parse_timetable_exn module_ soup =
 
 let timetable_exn ?session_file module_ =
   with_session ?session_file (fun session ->
-      let page = registration_page session module_ in
-      parse_timetable_exn module_ page.soup)
+      let profile_module = Profile.module_of_slug (Module.to_string module_) in
+      let page =
+        Profile.scope ?module_:profile_module Profile.Module_fetch (fun () ->
+            registration_page session module_)
+      in
+      Profile.measure ?module_:profile_module Profile.Timetable_parse (fun () ->
+          parse_timetable_exn module_ page.soup))
 
 let timetable ?session_file module_ =
   Internal_error.protect (fun () -> timetable_exn ?session_file module_)
@@ -427,14 +441,38 @@ let timetable_all ?session_file () =
   Internal_error.protect (fun () ->
       with_session ?session_file (fun session ->
           Timetable_batch.collect
-            ~start:(fun () -> start_flow session "RSW0001000-flow")
+            ~start:(fun () ->
+              Profile.scope Profile.Initial_flow (fun () ->
+                  let page = start_flow session "RSW0001000-flow" in
+                  (if Profile.enabled () then
+                     let recognized =
+                       Html.table_by_id "auto-table-2-2" page.soup <> None
+                       || Html.table_by_headers
+                            [ "月曜日"; "火曜日"; "水曜日"; "木曜日"; "金曜日" ]
+                            page.soup
+                          <> None
+                     in
+                     Profile.initial_flow ~timetable_recognized:recognized
+                       ~selected_module:
+                         (Timetable_batch.selected_module page.soup));
+                  page))
             ~flow_key
-            ~select:(select_registration_module session)
+            ~select:(fun ~key module_ ->
+              Profile.scope
+                ?module_:(Profile.module_of_slug (Module.to_string module_))
+                Profile.Module_fetch
+                (fun () -> select_registration_module session ~key module_))
             ~parse:(fun module_ page ->
+              let profile_module =
+                Profile.module_of_slug (Module.to_string module_)
+              in
               let module_code, term_code = Module.codes module_ in
-              Timetable_batch.validate_selection ~module_code ~term_code
-                page.soup;
-              parse_timetable_exn module_ page.soup)
+              Profile.measure ?module_:profile_module Profile.Selection_check
+                (fun () ->
+                  Timetable_batch.validate_selection ~module_code ~term_code
+                    page.soup);
+              Profile.measure ?module_:profile_module Profile.Timetable_parse
+                (fun () -> parse_timetable_exn module_ page.soup))
             Module.all))
 
 let timetable_snapshots_to_yojson snapshots =

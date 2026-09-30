@@ -42,3 +42,14 @@
  (name test_timetable_batch)
  (modules test_timetable_batch)
  (libraries alcotest twins))
+
+(test
+ (name test_profile)
+ (modules test_profile)
+ (flags (:standard -I lib/.twins.objs/byte))
+ (preprocess (action (run cat %{input-file})))
+ (preprocessor_deps
+  ../lib/.twins.objs/byte/session.cmi
+  ../lib/.twins.objs/byte/http_client.cmi
+  ../lib/.twins.objs/byte/internal_error.cmi)
+ (libraries alcotest twins cohttp-lwt-unix lwt.unix))
