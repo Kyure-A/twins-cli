@@ -1,0 +1,126 @@
+{
+  "measuredAt": "2026-09-30T07:58:49.994Z",
+  "revision": "08c19d1f590f630b5c5b5169a03a3c9b2327661d",
+  "scenario": "four-way",
+  "method": "Canonical warmed GitHub flake. Scenario selects the operations and concurrent grouping; peakCliProcesses records actual process overlap. Every worker uses --no-persist-session; no cookie files copied or inspected, no returned account data persisted. Full parsed JSON equality in memory. Diagnostic failure batch time includes peer completion; failed-operation elapsedMs is separate.",
+  "authBefore": true,
+  "authAfter": true,
+  "batches": [
+    {
+      "round": 1,
+      "mode": "serial",
+      "externalMs": 13028.772334,
+      "peakCliProcesses": 1,
+      "operationsMs": {
+        "grades": 686.565083,
+        "timetable": 3004.8905419999996,
+        "classes": 3516.6936670000005,
+        "general": 5819.0832500000015
+      },
+      "matchesReference": {
+        "grades": true,
+        "timetable": true,
+        "classes": true,
+        "general": true
+      }
+    },
+    {
+      "round": 1,
+      "mode": "parallel4",
+      "externalMs": 10521.923207999998,
+      "peakCliProcesses": 4,
+      "operationsMs": {
+        "grades": 726.2369579999995,
+        "timetable": 2803.180791999999,
+        "general": 7496.968457999999,
+        "classes": 10519.535292
+      },
+      "matchesReference": {
+        "grades": true,
+        "timetable": true,
+        "classes": true,
+        "general": true
+      }
+    },
+    {
+      "round": 2,
+      "mode": "parallel4",
+      "externalMs": 10018.464500000002,
+      "peakCliProcesses": 4,
+      "operationsMs": {
+        "grades": 689.7434580000008,
+        "timetable": 2557.310290999998,
+        "classes": 3426.510166,
+        "general": 10015.396250000002
+      },
+      "matchesReference": {
+        "grades": true,
+        "timetable": true,
+        "classes": true,
+        "general": true
+      }
+    },
+    {
+      "round": 2,
+      "mode": "serial",
+      "externalMs": 12643.802875000001,
+      "peakCliProcesses": 1,
+      "operationsMs": {
+        "grades": 638.2309590000004,
+        "timetable": 2879.3802499999947,
+        "classes": 2784.3846669999984,
+        "general": 6340.255250000002
+      },
+      "matchesReference": {
+        "grades": true,
+        "timetable": true,
+        "classes": true,
+        "general": true
+      }
+    },
+    {
+      "round": 3,
+      "mode": "serial",
+      "externalMs": 12163.196917000001,
+      "peakCliProcesses": 1,
+      "operationsMs": {
+        "grades": 701.2790420000019,
+        "timetable": 2769.285334,
+        "classes": 2875.9968329999974,
+        "general": 5815.141042000003
+      },
+      "matchesReference": {
+        "grades": true,
+        "timetable": true,
+        "classes": true,
+        "general": true
+      }
+    },
+    {
+      "round": 3,
+      "mode": "parallel4",
+      "externalMs": 10692.432457999996,
+      "peakCliProcesses": 4,
+      "operationsMs": {
+        "grades": 691.4142500000016,
+        "timetable": 2675.915291000005,
+        "general": 7889.685792000004,
+        "classes": 10690.534874999998
+      },
+      "matchesReference": {
+        "grades": true,
+        "timetable": true,
+        "classes": true,
+        "general": true
+      }
+    }
+  ],
+  "success": true,
+  "noticeSerialization": "Whole notice flow per session path; four CLI processes overlap, two notice readers take turns.",
+  "summary": {
+    "serialMedianMs": 12643.802875000001,
+    "parallelMedianMs": 10521.923207999998,
+    "timeReductionPercent": 16.78197365126196,
+    "speedup": 1.201662721258667
+  }
+}

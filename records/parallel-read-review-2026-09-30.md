@@ -1,5 +1,9 @@
 # Four-way read experiment — 2026-09-30
 
+Follow-up: [cause isolation and guarded concurrent reads](notice-flow-resolution-2026-09-30.md)
+resolves the interference observed here. This document preserves the original
+failed experiment and its then-current uncertainty.
+
 ## Result
 
 The four-way experiment did not produce a complete successful read. Both serial

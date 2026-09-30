@@ -1,0 +1,305 @@
+{
+  "method": "Sanitized projection of bounded canonical-flake experiments. No account payloads, cookies, URLs, or flow keys retained. Historical mode parallel4 is a generic concurrent label; scenario and peakCliProcesses identify actual work.",
+  "experiments": [
+    {
+      "revision": "861d95d3eadf2bf807bf5c732b7642f0b383c280",
+      "measuredAt": "2026-09-30T07:46:40.945Z",
+      "scenario": "diagnose-four-way",
+      "authBefore": true,
+      "authAfter": true,
+      "success": false,
+      "batches": [
+        {
+          "round": 1,
+          "mode": "serial",
+          "externalMs": 13198.766167,
+          "peakCliProcesses": 1,
+          "matchesReference": {
+            "grades": true,
+            "timetable": true,
+            "classes": true,
+            "general": true
+          },
+          "failures": []
+        },
+        {
+          "round": 1,
+          "mode": "parallel4",
+          "externalMs": 4091.549708999999,
+          "peakCliProcesses": 4,
+          "matchesReference": {
+            "grades": true,
+            "timetable": true,
+            "classes": true
+          },
+          "failures": [
+            {
+              "operation": "general",
+              "reason": "missing_form",
+              "elapsedMs": 3222.8090420000008,
+              "pages": [
+                {
+                  "phase": "initial",
+                  "pageIndex": 1,
+                  "httpStatus": 200,
+                  "bodyBytes": 1464,
+                  "hasNoticeSearchForm": false,
+                  "hasNoticeTable": false,
+                  "hasLoginForm": false,
+                  "hasAuthorizationError": false,
+                  "sessionExpiredMarker": true,
+                  "searchFormHasFlowKeyField": false,
+                  "searchFormActionHasFlowKey": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "revision": "861d95d3eadf2bf807bf5c732b7642f0b383c280",
+      "measuredAt": "2026-09-30T07:47:23.088Z",
+      "scenario": "notices-pair",
+      "authBefore": true,
+      "authAfter": true,
+      "success": false,
+      "batches": [
+        {
+          "round": 1,
+          "mode": "serial",
+          "externalMs": 11172.288875,
+          "peakCliProcesses": 1,
+          "matchesReference": {
+            "classes": true,
+            "general": true
+          },
+          "failures": []
+        },
+        {
+          "round": 1,
+          "mode": "parallel4",
+          "externalMs": 7950.773917,
+          "peakCliProcesses": 2,
+          "matchesReference": {
+            "general": true
+          },
+          "failures": [
+            {
+              "operation": "classes",
+              "reason": "missing_notice_table",
+              "elapsedMs": 2808.394375,
+              "pages": [
+                {
+                  "phase": "initial",
+                  "pageIndex": 1,
+                  "httpStatus": 200,
+                  "bodyBytes": 205703,
+                  "hasNoticeSearchForm": true,
+                  "hasNoticeTable": false,
+                  "hasLoginForm": false,
+                  "hasAuthorizationError": false,
+                  "sessionExpiredMarker": false,
+                  "searchFormHasFlowKeyField": true,
+                  "searchFormActionHasFlowKey": false
+                },
+                {
+                  "phase": "search",
+                  "pageIndex": 1,
+                  "httpStatus": 200,
+                  "bodyBytes": 1464,
+                  "hasNoticeSearchForm": false,
+                  "hasNoticeTable": false,
+                  "hasLoginForm": false,
+                  "hasAuthorizationError": false,
+                  "sessionExpiredMarker": true,
+                  "searchFormHasFlowKeyField": false,
+                  "searchFormActionHasFlowKey": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "revision": "861d95d3eadf2bf807bf5c732b7642f0b383c280",
+      "measuredAt": "2026-09-30T07:48:32.077Z",
+      "scenario": "notices-serial",
+      "authBefore": true,
+      "authAfter": true,
+      "success": true,
+      "batches": [
+        {
+          "round": 1,
+          "mode": "serial",
+          "externalMs": 14994.795791999999,
+          "peakCliProcesses": 1,
+          "matchesReference": {
+            "grades": true,
+            "timetable": true,
+            "classes": true,
+            "general": true
+          },
+          "failures": []
+        },
+        {
+          "round": 1,
+          "mode": "parallel4",
+          "externalMs": 10570.855916,
+          "peakCliProcesses": 3,
+          "matchesReference": {
+            "grades": true,
+            "timetable": true,
+            "classes": true,
+            "general": true
+          },
+          "failures": []
+        }
+      ]
+    },
+    {
+      "revision": "f3c3e493315218473af8425bd298738356c75519",
+      "measuredAt": "2026-09-30T07:52:28.627Z",
+      "scenario": "pause-initial",
+      "authBefore": true,
+      "authAfter": true,
+      "success": false,
+      "batches": [
+        {
+          "round": 1,
+          "mode": "serial",
+          "externalMs": 10980.734792,
+          "peakCliProcesses": 1,
+          "matchesReference": {
+            "general": true,
+            "classes": true
+          },
+          "failures": []
+        },
+        {
+          "round": 1,
+          "mode": "parallel4",
+          "externalMs": 5835.648834000001,
+          "peakCliProcesses": 2,
+          "matchesReference": {
+            "classes": true
+          },
+          "failures": [
+            {
+              "operation": "general",
+              "reason": "missing_notice_table",
+              "elapsedMs": 5835.492332999998,
+              "pages": [
+                {
+                  "phase": "initial",
+                  "pageIndex": 1,
+                  "httpStatus": 200,
+                  "bodyBytes": 205703,
+                  "hasNoticeSearchForm": true,
+                  "hasNoticeTable": false,
+                  "hasLoginForm": false,
+                  "hasAuthorizationError": false,
+                  "sessionExpiredMarker": false,
+                  "searchFormHasFlowKeyField": true,
+                  "searchFormActionHasFlowKey": false
+                },
+                {
+                  "phase": "search",
+                  "pageIndex": 1,
+                  "httpStatus": 200,
+                  "bodyBytes": 1464,
+                  "hasNoticeSearchForm": false,
+                  "hasNoticeTable": false,
+                  "hasLoginForm": false,
+                  "hasAuthorizationError": false,
+                  "sessionExpiredMarker": true,
+                  "searchFormHasFlowKeyField": false,
+                  "searchFormActionHasFlowKey": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "revision": "f3c3e493315218473af8425bd298738356c75519",
+      "measuredAt": "2026-09-30T07:55:08.071Z",
+      "scenario": "pause-search",
+      "authBefore": true,
+      "authAfter": true,
+      "success": false,
+      "batches": [
+        {
+          "round": 1,
+          "mode": "serial",
+          "externalMs": 11164.322875,
+          "peakCliProcesses": 1,
+          "matchesReference": {
+            "general": true,
+            "classes": true
+          },
+          "failures": []
+        },
+        {
+          "round": 1,
+          "mode": "parallel4",
+          "externalMs": 6739.395207999998,
+          "peakCliProcesses": 2,
+          "matchesReference": {
+            "classes": true
+          },
+          "failures": [
+            {
+              "operation": "general",
+              "reason": "missing_notice_table",
+              "elapsedMs": 6739.205083000001,
+              "pages": [
+                {
+                  "phase": "initial",
+                  "pageIndex": 1,
+                  "httpStatus": 200,
+                  "bodyBytes": 205703,
+                  "hasNoticeSearchForm": true,
+                  "hasNoticeTable": false,
+                  "hasLoginForm": false,
+                  "hasAuthorizationError": false,
+                  "sessionExpiredMarker": false,
+                  "searchFormHasFlowKeyField": true,
+                  "searchFormActionHasFlowKey": false
+                },
+                {
+                  "phase": "search",
+                  "pageIndex": 1,
+                  "httpStatus": 200,
+                  "bodyBytes": 274009,
+                  "hasNoticeSearchForm": true,
+                  "hasNoticeTable": true,
+                  "hasLoginForm": false,
+                  "hasAuthorizationError": false,
+                  "sessionExpiredMarker": false,
+                  "searchFormHasFlowKeyField": true,
+                  "searchFormActionHasFlowKey": false
+                },
+                {
+                  "phase": "page",
+                  "pageIndex": 2,
+                  "httpStatus": 200,
+                  "bodyBytes": 1464,
+                  "hasNoticeSearchForm": false,
+                  "hasNoticeTable": false,
+                  "hasLoginForm": false,
+                  "hasAuthorizationError": false,
+                  "sessionExpiredMarker": true,
+                  "searchFormHasFlowKeyField": false,
+                  "searchFormActionHasFlowKey": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
