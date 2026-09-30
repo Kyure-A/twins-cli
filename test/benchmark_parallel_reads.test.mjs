@@ -111,7 +111,12 @@ async function probe(scenario) {
     try {
       const events = (await readFile(path.join(directory, "events.jsonl"), "utf8"))
         .trim().split("\n").filter(Boolean).map(JSON.parse);
-      for (const pid of new Set(events.map(event => event.pid))) {
+      const active = new Set();
+      for (const event of events) {
+        if (event.event === "start") active.add(event.pid);
+        if (event.event === "end" || event.event === "failed") active.delete(event.pid);
+      }
+      for (const pid of active) {
         try { process.kill(pid, "SIGKILL"); } catch {}
       }
     } catch {}
