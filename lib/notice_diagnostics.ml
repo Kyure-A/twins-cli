@@ -9,6 +9,7 @@ let max_entries = 128
 
 type state = {
   started : float;
+  after_phase : phase -> unit;
   mutable context : (phase * int) option;
   mutable stages : Yojson.Safe.t list;
   mutable pages : Yojson.Safe.t list;
@@ -45,13 +46,14 @@ let report state success =
           ] );
     ]
 
-let run ~enabled ~emit ~is_success operation =
+let run ?(after_phase = fun _ -> ()) ~enabled ~emit ~is_success operation =
   if not enabled then operation ()
   else
     let previous = !active in
     let state =
       {
         started = Unix.gettimeofday ();
+        after_phase;
         context = None;
         stages = [];
         pages = [];
@@ -96,7 +98,11 @@ let with_phase phase ~page_index operation =
               ]
             :: state.stages
       in
-      match operation () with
+      match
+        let result = operation () in
+        state.after_phase phase;
+        result
+      with
       | result ->
           finish true;
           result

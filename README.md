@@ -73,6 +73,11 @@ signals, not a diagnosis. The benchmark's optional fifth argument selects a
 controlled scenario such as `diagnose-four-way`, `notices-pair`, or
 `notices-serial`; diagnostic scenarios let bounded peer reads finish after an
 error so their outcomes can be compared.
+`pause-initial` and `pause-search` use an explicit stdin barrier: one general
+notice read pauses after the selected phase, a class notice read finishes, then
+the first resumes. The underlying diagnostic-only `--pause-after` option
+requires `--diagnose` and resumes only on an exact `continue` line. These
+scenarios establish flow interference; their duration is not a speed benchmark.
 
 All requests and redirects stay on the TWINS HTTPS origin; cross-origin,
 non-HTTPS and nonstandard-port targets are rejected before credentials can be

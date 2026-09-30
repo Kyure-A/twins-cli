@@ -462,6 +462,22 @@ let notice_kind =
     & info [ "kind" ] ~docv:"KIND" ~doc:"掲示種別: classes または general。")
 
 let notices_command =
+  let pause_after =
+    Arg.(
+      value
+      & opt
+          (some
+             (enum
+                [
+                  ("initial", Notice_diagnostics.Initial);
+                  ("search", Notice_diagnostics.Search);
+                ]))
+          None
+      & info [ "pause-after" ] ~docv:"PHASE"
+          ~doc:
+            "診断用。initial または search 後に停止し、標準入力の continue で再開します。--diagnose \
+             が必要です。")
+  in
   let diagnose =
     Arg.(
       value & flag
@@ -490,10 +506,36 @@ let notices_command =
           ~doc:"比較診断用に、掲示一覧のページ送りで HTTP 接続を再利用しません。")
   in
   let execute session_file kind unread title limit all max_pages metadata json
-      no_reuse_connections no_persist_session diagnose =
+      no_reuse_connections no_persist_session diagnose pause_after =
     run (fun () ->
+        if pause_after <> None && not diagnose then
+          raise
+            (Cli_error
+               (Error.Invalid_argument "--pause-after requires --diagnose"));
+        let paused = ref false in
+        let after_phase phase =
+          if (not !paused) && pause_after = Some phase then (
+            paused := true;
+            let name =
+              match phase with
+              | Notice_diagnostics.Initial -> "initial"
+              | Notice_diagnostics.Search -> "search"
+              | Notice_diagnostics.Page -> "page"
+            in
+            Yojson.Safe.to_channel stderr
+              (`Assoc [ ("noticePause", `Assoc [ ("phase", `String name) ]) ]);
+            output_char stderr '\n';
+            flush stderr;
+            let resume =
+              try Some (input_line stdin) with End_of_file -> None
+            in
+            if resume <> Some "continue" then
+              raise
+                (Cli_error
+                   (Error.Cancelled "notice diagnostic barrier was not resumed")))
+        in
         let result =
-          Notice_diagnostics.run ~enabled:diagnose
+          Notice_diagnostics.run ~enabled:diagnose ~after_phase
             ~emit:(fun report ->
               Yojson.Safe.to_channel stderr report;
               output_char stderr '\n';
@@ -536,7 +578,7 @@ let notices_command =
     Term.(
       const execute $ session $ notice_kind $ unread $ title $ limit $ all
       $ max_pages $ metadata $ json $ no_reuse_connections $ no_persist_session
-      $ diagnose)
+      $ diagnose $ pause_after)
 
 let notice_command =
   let seq = Arg.(required & pos 0 (some string) None & info [] ~docv:"ID") in

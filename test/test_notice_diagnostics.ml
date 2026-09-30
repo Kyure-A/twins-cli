@@ -1,7 +1,7 @@
-let capture ?(enabled = true) operation =
+let capture ?(enabled = true) ?after_phase operation =
   let reports = ref [] in
   let value =
-    Notice_diagnostics.run ~enabled
+    Notice_diagnostics.run ?after_phase ~enabled
       ~emit:(fun report -> reports := report :: !reports)
       ~is_success:Result.is_ok operation
   in
@@ -238,11 +238,110 @@ let test_foreign_tables () =
   bool "hasTimetableTable" true page;
   bool "hasNoticeTable" false page
 
+let test_after_phase () =
+  let events = ref [] in
+  let add event = events := event :: !events in
+  let _, reports =
+    capture
+      ~after_phase:(function
+        | Initial -> add "after initial"
+        | Search -> add "after search"
+        | Page -> add "after page")
+      (fun () ->
+        let value =
+          Notice_diagnostics.with_phase Initial ~page_index:1 (fun () ->
+              add "initial operation";
+              response "initial";
+              42)
+        in
+        Alcotest.check Alcotest.int "result preserved" 42 value;
+        add "initial returned";
+        (try
+           Notice_diagnostics.with_phase Search ~page_index:1 (fun () ->
+               add "search operation";
+               failwith "private-operation-error")
+         with Failure _ -> ());
+        Notice_diagnostics.with_phase Page ~page_index:2 (fun () ->
+            add "page operation";
+            response "page");
+        Ok ())
+  in
+  Alcotest.check
+    (Alcotest.list Alcotest.string)
+    "callback after success only"
+    [
+      "initial operation";
+      "after initial";
+      "initial returned";
+      "search operation";
+      "page operation";
+      "after page";
+    ]
+    (List.rev !events);
+  Alcotest.check Alcotest.int "one stage record each" 3
+    (field "stages" (report reports) |> Yojson.Safe.Util.to_list |> List.length);
+  let calls = ref 0 in
+  let _, disabled =
+    capture ~enabled:false
+      ~after_phase:(fun _ -> incr calls)
+      (fun () ->
+        Notice_diagnostics.with_phase Initial ~page_index:1 (fun () -> ());
+        Ok ())
+  in
+  Alcotest.check Alcotest.int "disabled callback skipped" 0 !calls;
+  Alcotest.check Alcotest.int "disabled report skipped" 0 (List.length disabled)
+
+let test_after_phase_failure () =
+  let reports = ref [] in
+  let callbacks = ref 0 in
+  let raised = ref false in
+  (try
+     Notice_diagnostics.run ~enabled:true
+       ~emit:(fun value -> reports := value :: !reports)
+       ~is_success:(fun () -> true)
+       ~after_phase:(fun _ ->
+         incr callbacks;
+         failwith "private-callback-error")
+       (fun () ->
+         try
+           Notice_diagnostics.with_phase Initial ~page_index:1 (fun () ->
+               response "initial")
+         with exn ->
+           (* A callback failure must already have left the failed phase. *)
+           response "outside failed phase";
+           raise exn)
+   with Failure _ -> raised := true);
+  Alcotest.check Alcotest.bool "callback error propagates" true !raised;
+  Alcotest.check Alcotest.int "callback called once" 1 !callbacks;
+  let value = report !reports in
+  Alcotest.check Alcotest.string "report failed" "failure"
+    (field "outcome" value |> Yojson.Safe.Util.to_string);
+  Alcotest.check Alcotest.int "failed phase context restored" 1
+    (field "responsesChecked" value |> Yojson.Safe.Util.to_int);
+  let stages = field "stages" value |> Yojson.Safe.Util.to_list in
+  Alcotest.check Alcotest.int "one failed stage" 1 (List.length stages);
+  Alcotest.check Alcotest.string "stage failed" "failure"
+    (field "outcome" (List.hd stages) |> Yojson.Safe.Util.to_string);
+  Alcotest.check Alcotest.bool "global state restored" false
+    (Notice_diagnostics.enabled ());
+  let _, next =
+    capture (fun () ->
+        Notice_diagnostics.with_phase Page ~page_index:2 (fun () ->
+            response "next");
+        Ok ())
+  in
+  Alcotest.check Alcotest.int "callback does not leak to next run" 1 !callbacks;
+  Alcotest.check Alcotest.string "next run succeeded" "success"
+    (field "outcome" (report next) |> Yojson.Safe.Util.to_string)
+
 let () =
   Alcotest.run "notice diagnostics"
     [
       ( "safe report",
         [
+          Alcotest.test_case "after-phase callback" `Quick test_after_phase;
+          Alcotest.test_case "after-phase callback failure" `Quick
+            test_after_phase_failure;
           Alcotest.test_case "disabled" `Quick test_disabled;
           Alcotest.test_case "classification and privacy" `Quick
             test_classification_and_privacy;

@@ -6,11 +6,16 @@ type phase = Initial | Search | Page
 val enabled : unit -> bool
 
 val run :
+  ?after_phase:(phase -> unit) ->
   enabled:bool ->
   emit:(Yojson.Safe.t -> unit) ->
   is_success:('a -> bool) ->
   (unit -> 'a) ->
   'a
+
+(** [after_phase] runs once after each successful scoped operation, before its
+    value is returned. It is inactive when diagnostics are disabled. A callback
+    exception fails the current stage and restores the enclosing context. *)
 
 val with_phase : phase -> page_index:int -> (unit -> 'a) -> 'a
 

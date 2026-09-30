@@ -143,6 +143,13 @@ grep -q -- '--max-pages=N' <<<"$notice_help"
 grep -q -- '--no-reuse-connections' <<<"$notice_help"
 grep -q -- '--no-persist-session' <<<"$notice_help"
 grep -q -- '--diagnose' <<<"$notice_help"
+grep -q -- '--pause-after=PHASE' <<<"$notice_help"
+pause_status=0
+"${cli[@]}" notices --pause-after initial --session "$session_file" \
+  > "$smoke_directory/pause.stdout" 2> "$smoke_directory/pause.stderr" || pause_status=$?
+test "$pause_status" -eq 1
+test ! -s "$smoke_directory/pause.stdout"
+grep -q -- '--pause-after requires --diagnose' "$smoke_directory/pause.stderr"
 
 set +e
 invalid_pages=$("${cli[@]}" notices --max-pages 0 --metadata --json --session "$session_file" 2>&1)

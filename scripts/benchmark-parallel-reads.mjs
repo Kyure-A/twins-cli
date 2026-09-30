@@ -13,6 +13,8 @@ const scenarios = [
   "general-and-timetable",
   "general-and-grades",
   "general-pair",
+  "pause-initial",
+  "pause-search",
 ];
 if (
   !/^[a-f0-9]{40}$/.test(revision ?? "") ||
@@ -103,13 +105,13 @@ for (const signal of ["SIGTERM", "SIGINT"])
     stopAll();
     process.exit(1);
   });
-async function run(args) {
+async function run(args, onPause) {
   const start = performance.now();
   return new Promise((resolve, reject) => {
     const c = spawn(
       "nix",
       ["run", `github:Kyure-A/twins-cli/${revision}`, "--", ...args],
-      { detached: true, stdio: ["ignore", "pipe", "pipe"] },
+      { detached: true, stdio: [onPause ? "pipe" : "ignore", "pipe", "pipe"] },
     );
     children.add(c);
     peak = Math.max(peak, children.size);
@@ -118,6 +120,9 @@ async function run(args) {
     let stdout = "",
       stderr = "",
       limit = null;
+    let pending = "",
+      pauseSeen = false;
+    if (c.stdin) c.stdin.on("error", () => {});
     const timer = setTimeout(() => {
       limit = "timeout";
       kill(c);
@@ -131,6 +136,22 @@ async function run(args) {
     });
     c.stderr.on("data", (d) => {
       stderr += d;
+      if (onPause && !pauseSeen) {
+        pending += d;
+        const lines = pending.split("\n");
+        pending = lines.pop();
+        for (const line of lines) {
+          try {
+            const pause = JSON.parse(line).noticePause;
+            if (!pauseSeen && ["initial", "search"].includes(pause?.phase)) {
+              pauseSeen = true;
+              onPause(() => {
+                if (!c.stdin.destroyed) c.stdin.end("continue\n");
+              });
+            }
+          } catch {}
+        }
+      }
       if (stderr.length > 2 * 1024 * 1024) {
         limit = "stderr_limit";
         kill(c);
@@ -240,8 +261,9 @@ const allOperations = [
     ],
   },
 ];
-const operations =
-  scenario === "notices-pair"
+const operations = scenario.startsWith("pause-")
+  ? [allOperations[3], allOperations[2]]
+  : scenario === "notices-pair"
     ? allOperations.slice(2)
     : scenario === "general-and-timetable"
       ? [allOperations[1], allOperations[3]]
@@ -300,13 +322,17 @@ async function batch(mode, round) {
       ]),
     ),
   });
-  async function operation(spec) {
+  async function operation(spec, { pauseAfter, onPause } = {}) {
     try {
-      const r = await run([
-        ...spec.args,
-        "--no-persist-session",
-        ...(diagnose && spec.args[0] === "notices" ? ["--diagnose"] : []),
-      ]);
+      const r = await run(
+        [
+          ...spec.args,
+          "--no-persist-session",
+          ...(diagnose && spec.args[0] === "notices" ? ["--diagnose"] : []),
+          ...(pauseAfter ? ["--pause-after", pauseAfter] : []),
+        ],
+        onPause,
+      );
       if (diagnose && spec.args[0] === "notices")
         diagnostics[spec.name] = noticeDiagnostics(r.stderr);
       if (
@@ -358,17 +384,42 @@ async function batch(mode, round) {
     if (mode === "serial") {
       for (const spec of operations) await operation(spec);
     } else {
-      const tasks =
-        scenario === "notices-serial"
-          ? [
-              operation(allOperations[0]),
-              operation(allOperations[1]),
-              (async () => {
-                await operation(allOperations[3]);
-                await operation(allOperations[2]);
-              })(),
-            ]
-          : operations.map(operation);
+      let tasks;
+      if (scenario.startsWith("pause-")) {
+        let release;
+        const ready = new Promise((resolve) => {
+          release = resolve;
+        });
+        const first = operation(allOperations[3], {
+          pauseAfter: scenario.slice(6),
+          onPause: release,
+        });
+        first.then(
+          () => release(null),
+          () => release(null),
+        );
+        const second = (async () => {
+          const resume = await ready;
+          if (resume)
+            try {
+              await operation(allOperations[2]);
+            } finally {
+              resume();
+            }
+        })();
+        tasks = [first, second];
+      } else
+        tasks =
+          scenario === "notices-serial"
+            ? [
+                operation(allOperations[0]),
+                operation(allOperations[1]),
+                (async () => {
+                  await operation(allOperations[3]);
+                  await operation(allOperations[2]);
+                })(),
+              ]
+            : operations.map(operation);
       const settled = await Promise.allSettled(tasks);
       const failed = settled.filter((x) => x.status === "rejected");
       if (failed.length) throw firstFailure;
