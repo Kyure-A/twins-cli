@@ -17,6 +17,10 @@ let checked_page ?session response =
     Profile.measure Profile.Html_parse (fun () ->
         Html.parse (Http_client.body response))
   in
+  Notice_diagnostics.record_response ~uri:(Http_client.uri response)
+    ~status:response.status
+    ~body:(Http_client.body response)
+    ~soup ();
   Profile.measure Profile.Page_check (fun () ->
       if Html.is_login_page soup || Html.is_auth_error soup then (
         Option.iter Session.clear session;
@@ -611,7 +615,10 @@ module Notice_kind = struct
 end
 
 let notices_page session ~kind ~unread ~title =
-  let page = start_flow session "KJW0001100-flow" in
+  let page =
+    Notice_diagnostics.with_phase Notice_diagnostics.Initial ~page_index:0
+      (fun () -> start_flow session "KJW0001100-flow")
+  in
   let fields = form_fields_by_name page "keijiSearchForm" in
   let fields =
     fields
@@ -629,7 +636,8 @@ let notices_page session ~kind ~unread ~title =
     if unread then Html.set_field "userMidokuFlg" "1" fields
     else Html.remove_field "userMidokuFlg" fields
   in
-  post_page session (make_uri "campussquare.do") fields
+  Notice_diagnostics.with_phase Notice_diagnostics.Search ~page_index:1
+    (fun () -> post_page session (make_uri "campussquare.do") fields)
 
 let parse_notices_exn soup =
   (* Authenticated class listings have six columns; general listings have four.
@@ -713,7 +721,10 @@ let collect_notices session ~limit ~max_pages first =
     ~fetch:(fun (current, page) href ->
       let number = Notice_pagination.page_number ~current href in
       ( number,
-        get_page session (absolute_uri (Http_client.uri page.response) href) ))
+        Notice_diagnostics.with_phase Notice_diagnostics.Page ~page_index:number
+          (fun () ->
+            get_page session (absolute_uri (Http_client.uri page.response) href))
+      ))
     ~parse:(fun (_, page) -> parse_notices_exn page.soup)
     ~next:(fun (current_page, page) ->
       Notice_pagination.next ~current_page page.soup)

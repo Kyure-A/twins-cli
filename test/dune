@@ -86,3 +86,8 @@
   ../lib/.twins.objs/byte/http_client.cmi
   ../lib/.twins.objs/byte/notice_read.cmi)
  (libraries alcotest twins cohttp-lwt-unix lwt.unix))
+
+(test
+ (name test_notice_diagnostics)
+ (modules test_notice_diagnostics)
+ (libraries alcotest twins))

@@ -142,6 +142,7 @@ grep -q -- '--metadata' <<<"$notice_help"
 grep -q -- '--max-pages=N' <<<"$notice_help"
 grep -q -- '--no-reuse-connections' <<<"$notice_help"
 grep -q -- '--no-persist-session' <<<"$notice_help"
+grep -q -- '--diagnose' <<<"$notice_help"
 
 set +e
 invalid_pages=$("${cli[@]}" notices --max-pages 0 --metadata --json --session "$session_file" 2>&1)

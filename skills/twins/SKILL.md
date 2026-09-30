@@ -108,6 +108,13 @@ concurrency, compare complete outputs with a serial control using the same flag,
 and check `auth status` after all workers finish. Keep ordinary reads persistent;
 this option is for diagnostics, not automatic login recovery.
 
+For a requested notice-flow investigation, add `notices --diagnose`. Its stderr
+report distinguishes initial/search/pagination responses using only HTTP status,
+counts, and allowlisted structural facts. Flow-key presence/equality and selected
+notice-kind categories are retained without the underlying values or text.
+Marker booleans alone do not establish a server-side cause. Never fetch notice
+details or persist raw pages just to diagnose notice-list concurrency.
+
 When investigating fetch latency, add `--profile` to the requested timetable
 read, for example `timetable --all --json --profile`. It supports single-module
 reads too and follows the same authentication policy above. Do not enable it for

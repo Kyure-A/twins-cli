@@ -4,12 +4,90 @@ import { isDeepStrictEqual } from "node:util";
 const revision = process.argv[2],
   output = process.argv[3];
 const rounds = Number(process.argv[4] ?? "1");
+const scenario = process.argv[5] ?? "four-way";
+const scenarios = [
+  "four-way",
+  "diagnose-four-way",
+  "notices-pair",
+  "notices-serial",
+  "general-and-timetable",
+  "general-and-grades",
+  "general-pair",
+];
 if (
   !/^[a-f0-9]{40}$/.test(revision ?? "") ||
   !output ||
-  ![1, 2, 3].includes(rounds)
+  ![1, 2, 3].includes(rounds) ||
+  !scenarios.includes(scenario)
 )
   throw Error("Expected REVISION OUTPUT [ROUNDS=1..3]");
+const diagnose = scenario !== "four-way";
+function noticeDiagnostics(stderr) {
+  const values = new Set([
+    "initial",
+    "search",
+    "page",
+    "success",
+    "failure",
+    "classes",
+    "general",
+  ]);
+  const keys = new Set([
+    "version",
+    "outcome",
+    "wallMs",
+    "stagesStarted",
+    "responsesChecked",
+    "truncated",
+    "phase",
+    "pageIndex",
+    "httpStatus",
+    "bodyBytes",
+    "hasNoticeSearchForm",
+    "hasNoticeTable",
+    "hasGradeTable",
+    "hasTimetableTable",
+    "hasLoginForm",
+    "hasAuthorizationError",
+    "sessionExpiredMarker",
+    "invalidFlowMarker",
+    "windowMarker",
+    "concurrentAccessMarker",
+    "operationErrorMarker",
+    "flowLockMarker",
+    "pageHasFlowKey",
+    "pagerFlowKeyMatchesPage",
+    "selectedKind",
+    "searchFormHasFlowKeyField",
+    "searchFormActionHasFlowKey",
+    "searchFormActionHasFlowId",
+    "responseQueryHasFlowKey",
+    "responseQueryHasFlowId",
+  ]);
+  const clean = (obj) =>
+    Object.fromEntries(
+      Object.entries(obj).filter(
+        ([k, v]) =>
+          keys.has(k) &&
+          (v === null ||
+            typeof v === "boolean" ||
+            (typeof v === "number" && Number.isFinite(v) && v >= 0) ||
+            (typeof v === "string" && values.has(v))),
+      ),
+    );
+  for (const line of stderr.trim().split("\n")) {
+    try {
+      const d = JSON.parse(line).noticeDiagnostics;
+      if (d?.version === 1 && Array.isArray(d.pages) && Array.isArray(d.stages))
+        return {
+          ...clean(d),
+          pages: d.pages.slice(0, 128).map(clean),
+          stages: d.stages.slice(0, 128).map(clean),
+        };
+    } catch {}
+  }
+  return null;
+}
 const children = new Set();
 let peak = 0;
 const kill = (c) => {
@@ -120,7 +198,9 @@ async function run(args) {
             safe: {
               exitCode: code,
               reason: limit ?? safeCode ?? "unclassified_command_failure",
+              elapsedMs: performance.now() - start,
               ...(httpStatus === undefined ? {} : { httpStatus }),
+              ...(diagnose ? { diagnostics: noticeDiagnostics(stderr) } : {}),
             },
           }),
         );
@@ -130,7 +210,7 @@ async function run(args) {
     });
   });
 }
-const operations = [
+const allOperations = [
   { name: "grades", args: ["grades", "--json"] },
   { name: "timetable", args: ["timetable", "--all", "--json", "--profile"] },
   {
@@ -160,6 +240,19 @@ const operations = [
     ],
   },
 ];
+const operations =
+  scenario === "notices-pair"
+    ? allOperations.slice(2)
+    : scenario === "general-and-timetable"
+      ? [allOperations[1], allOperations[3]]
+      : scenario === "general-and-grades"
+        ? [allOperations[0], allOperations[3]]
+        : scenario === "general-pair"
+          ? [
+              allOperations[3],
+              { ...allOperations[3], name: "general_duplicate" },
+            ]
+          : allOperations;
 const expectedModules = [
   "spring-a",
   "spring-b",
@@ -173,8 +266,9 @@ const expectedModules = [
 const document = {
   measuredAt: new Date().toISOString(),
   revision,
+  scenario,
   method:
-    "Canonical warmed GitHub flake; grades, all timetable, all class notices, all general notices. Every worker uses --no-persist-session; no cookie files copied or inspected, no returned account data persisted. Full parsed JSON equality in memory. Alternating serial and four concurrent CLI processes.",
+    "Canonical warmed GitHub flake. Scenario selects the operations and concurrent grouping; peakCliProcesses records actual process overlap. Every worker uses --no-persist-session; no cookie files copied or inspected, no returned account data persisted. Full parsed JSON equality in memory. Diagnostic failure batch time includes peer completion; failed-operation elapsedMs is separate.",
   authBefore: false,
   authAfter: false,
   batches: [],
@@ -186,6 +280,8 @@ async function batch(mode, round) {
   const started = performance.now();
   const results = {};
   const timings = {};
+  const diagnostics = {};
+  const failures = [];
   let firstFailure;
   const failureSummary = () => ({
     round,
@@ -195,10 +291,30 @@ async function batch(mode, round) {
     operationsMs: timings,
     complete: false,
     failure: firstFailure.safe,
+    failures,
+    diagnostics,
+    matchesReference: Object.fromEntries(
+      Object.keys(results).map((name) => [
+        name,
+        reference ? isDeepStrictEqual(reference[name], results[name]) : null,
+      ]),
+    ),
   });
   async function operation(spec) {
     try {
-      const r = await run([...spec.args, "--no-persist-session"]);
+      const r = await run([
+        ...spec.args,
+        "--no-persist-session",
+        ...(diagnose && spec.args[0] === "notices" ? ["--diagnose"] : []),
+      ]);
+      if (diagnose && spec.args[0] === "notices")
+        diagnostics[spec.name] = noticeDiagnostics(r.stderr);
+      if (
+        diagnose &&
+        spec.args[0] === "notices" &&
+        diagnostics[spec.name] === null
+      )
+        throw Error("missing_notice_diagnostics");
       const data = JSON.parse(r.stdout);
       if (spec.name === "timetable") {
         if (
@@ -225,6 +341,7 @@ async function batch(mode, round) {
               "incomplete_timetable",
               "invalid_grades",
               "incomplete_notices",
+              "missing_notice_diagnostics",
             ].includes(e.message)
               ? e.message
               : "invalid_or_failed_output",
@@ -232,7 +349,8 @@ async function batch(mode, round) {
         },
       });
       firstFailure ??= failure;
-      stopAll();
+      failures.push(failure.safe);
+      if (!diagnose) stopAll();
       throw failure;
     }
   }
@@ -240,7 +358,18 @@ async function batch(mode, round) {
     if (mode === "serial") {
       for (const spec of operations) await operation(spec);
     } else {
-      const settled = await Promise.allSettled(operations.map(operation));
+      const tasks =
+        scenario === "notices-serial"
+          ? [
+              operation(allOperations[0]),
+              operation(allOperations[1]),
+              (async () => {
+                await operation(allOperations[3]);
+                await operation(allOperations[2]);
+              })(),
+            ]
+          : operations.map(operation);
+      const settled = await Promise.allSettled(tasks);
       const failed = settled.filter((x) => x.status === "rejected");
       if (failed.length) throw firstFailure;
     }
@@ -264,6 +393,7 @@ async function batch(mode, round) {
     peakCliProcesses: peak,
     operationsMs: timings,
     matchesReference: equality,
+    ...(diagnose ? { diagnostics } : {}),
   };
   document.batches.push(summary);
   console.log(JSON.stringify(summary));

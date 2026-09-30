@@ -462,6 +462,11 @@ let notice_kind =
     & info [ "kind" ] ~docv:"KIND" ~doc:"掲示種別: classes または general。")
 
 let notices_command =
+  let diagnose =
+    Arg.(
+      value & flag
+      & info [ "diagnose" ] ~doc:"掲示取得の段階とページ構造を匿名化した診断 JSON を標準エラーに出力します。")
+  in
   let unread = Arg.(value & flag & info [ "unread" ] ~doc:"未読の掲示だけを表示します。") in
   let title =
     Arg.(
@@ -485,13 +490,20 @@ let notices_command =
           ~doc:"比較診断用に、掲示一覧のページ送りで HTTP 接続を再利用しません。")
   in
   let execute session_file kind unread title limit all max_pages metadata json
-      no_reuse_connections no_persist_session =
+      no_reuse_connections no_persist_session diagnose =
     run (fun () ->
         let result =
-          Twins.notices_with_metadata ?session_file ~all ~max_pages ~kind
-            ~persist_session:(not no_persist_session)
-            ~reuse_connections:(not no_reuse_connections) ~unread ~title ~limit
-            ()
+          Notice_diagnostics.run ~enabled:diagnose
+            ~emit:(fun report ->
+              Yojson.Safe.to_channel stderr report;
+              output_char stderr '\n';
+              flush stderr)
+            ~is_success:Result.is_ok
+            (fun () ->
+              Twins.notices_with_metadata ?session_file ~all ~max_pages ~kind
+                ~persist_session:(not no_persist_session)
+                ~reuse_connections:(not no_reuse_connections) ~unread ~title
+                ~limit ())
           |> unwrap
         in
         let notices = result.items in
@@ -523,7 +535,8 @@ let notices_command =
     (Cmd.info "notices" ~doc:"授業・一般掲示を検索します。")
     Term.(
       const execute $ session $ notice_kind $ unread $ title $ limit $ all
-      $ max_pages $ metadata $ json $ no_reuse_connections $ no_persist_session)
+      $ max_pages $ metadata $ json $ no_reuse_connections $ no_persist_session
+      $ diagnose)
 
 let notice_command =
   let seq = Arg.(required & pos 0 (some string) None & info [] ~docv:"ID") in

@@ -65,6 +65,15 @@ class/general notice lists. It compares complete JSON values in memory and
 retains only timings, equality flags, and sanitized failures. A failure stops
 the remaining workers; authentication is checked before and after the run.
 
+For notice-flow diagnosis, `notices --diagnose` adds one content-free JSON
+report to stderr with the initial/search/pagination stage, page number, HTTP
+status, and allowlisted page-shape facts. It never includes URLs, execution
+keys, cookies, page text, or error messages. Literal error-marker matches are
+signals, not a diagnosis. The benchmark's optional fifth argument selects a
+controlled scenario such as `diagnose-four-way`, `notices-pair`, or
+`notices-serial`; diagnostic scenarios let bounded peer reads finish after an
+error so their outcomes can be compared.
+
 All requests and redirects stay on the TWINS HTTPS origin; cross-origin,
 non-HTTPS and nonstandard-port targets are rejected before credentials can be
 replayed. This matches the CLI's direct TWINS portal login flow.
