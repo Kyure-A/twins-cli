@@ -77,6 +77,21 @@ class/general notice lists. It compares complete JSON values in memory and
 retains only timings, equality flags, and sanitized failures. A failure stops
 the remaining workers; authentication is checked before and after the run.
 
+The `eight-way` scenario compares serial and four-process batches with a pool
+of up to eight processes over the same data. It splits the timetable into eight
+single-module reads, for eleven CLI calls in total including grades and both
+notice kinds. Notice readers retain their flow lock. Both notice readers start
+early; the other slots fetch grades and timetable modules. Each module and the
+reassembled eight-module result must match the `timetable --all` serial control.
+Splitting repeats timetable flow initialization, so more processes need not be
+faster. On the first observed eight-worker failure the pool stops admitting new
+work, waits for already running bounded reads, and verifies authentication.
+Only sanitized profiles, timings and comparison flags are retained.
+
+```sh
+node scripts/benchmark-parallel-reads.mjs COMMIT_SHA OUTPUT_JSON 3 eight-way
+```
+
 For notice-flow diagnosis, `notices --diagnose` adds one content-free JSON
 report to stderr with the initial/search/pagination stage, page number, HTTP
 status, and allowlisted page-shape facts. It never includes URLs, execution

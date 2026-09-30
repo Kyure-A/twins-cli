@@ -446,6 +446,9 @@ let timetable_exn ?session_file ?persist_session module_ =
         Profile.scope ?module_:profile_module Profile.Module_fetch (fun () ->
             registration_page session module_)
       in
+      let module_code, term_code = Module.codes module_ in
+      Profile.measure ?module_:profile_module Profile.Selection_check (fun () ->
+          Timetable_batch.validate_selection ~module_code ~term_code page.soup);
       Profile.measure ?module_:profile_module Profile.Timetable_parse (fun () ->
           parse_timetable_exn module_ page.soup))
 

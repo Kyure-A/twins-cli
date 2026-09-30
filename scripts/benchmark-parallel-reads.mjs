@@ -7,6 +7,7 @@ const rounds = Number(process.argv[4] ?? "1");
 const scenario = process.argv[5] ?? "four-way";
 const scenarios = [
   "four-way",
+  "eight-way",
   "diagnose-four-way",
   "notices-pair",
   "notices-serial",
@@ -23,7 +24,40 @@ if (
   !scenarios.includes(scenario)
 )
   throw Error("Expected REVISION OUTPUT [ROUNDS=1..3]");
-const diagnose = scenario !== "four-way";
+const diagnose = !["four-way", "eight-way"].includes(scenario);
+function timetableProfile(stderr) {
+  const strings = new Set([
+    "success", "failure", "reuse", "default",
+    "session_load", "session_save", "initial_flow", "module_fetch",
+    "html_parse", "page_check", "selection_check", "timetable_parse",
+    "json_output", "text_output", ...expectedModules,
+  ]);
+  const keys = new Set([
+    "version", "outcome", "wallMs", "cpuMs", "transport", "connectionsCreated",
+    "stage", "module", "index", "status", "bytes", "wireBytes", "headersMs", "bodyMs",
+  ]);
+  const clean = (obj) => Object.fromEntries(
+    Object.entries(obj).filter(([k, v]) =>
+      keys.has(k) && (
+        v === null ||
+        (typeof v === "number" && Number.isFinite(v) && v >= 0) ||
+        (typeof v === "string" && strings.has(v))
+      ),
+    ),
+  );
+  for (const line of stderr.trim().split("\n")) {
+    try {
+      const p = JSON.parse(line).profile;
+      if (p?.version === 1 && Array.isArray(p.stages) && Array.isArray(p.http))
+        return {
+          ...clean(p),
+          stages: p.stages.slice(0, 256).map(clean),
+          http: p.http.slice(0, 128).map(clean),
+        };
+    } catch {}
+  }
+  return null;
+}
 function noticeDiagnostics(stderr) {
   const values = new Set([
     "initial",
@@ -229,6 +263,8 @@ async function run(args, onPause) {
               elapsedMs: performance.now() - start,
               ...(httpStatus === undefined ? {} : { httpStatus }),
               ...(diagnose ? { diagnostics: noticeDiagnostics(stderr) } : {}),
+              ...(scenario === "eight-way" && args[0] === "timetable"
+                ? { profile: timetableProfile(stderr) } : {}),
             },
           }),
         );
@@ -310,6 +346,12 @@ async function batch(mode, round) {
   const results = {};
   const timings = {};
   const diagnostics = {};
+  const profiles = {};
+  const modules = {};
+  const moduleMatches = {};
+  let callsStarted = 0;
+  let timetableStarted;
+  let timetableFinished;
   const failures = [];
   let firstFailure;
   const failureSummary = () => ({
@@ -322,6 +364,7 @@ async function batch(mode, round) {
     failure: firstFailure.safe,
     failures,
     diagnostics,
+    ...(scenario === "eight-way" ? { profiles, moduleMatches, callsStarted } : {}),
     matchesReference: Object.fromEntries(
       Object.keys(results).map((name) => [
         name,
@@ -330,6 +373,8 @@ async function batch(mode, round) {
     ),
   });
   async function operation(spec, { pauseAfter, onPause } = {}) {
+    callsStarted++;
+    if (spec.module) timetableStarted ??= performance.now();
     try {
       const r = await run(
         [
@@ -352,7 +397,19 @@ async function batch(mode, round) {
       )
         throw Error("missing_notice_diagnostics");
       const data = JSON.parse(r.stdout);
-      if (spec.name === "timetable") {
+      if (scenario === "eight-way" && spec.args[0] === "timetable") {
+        profiles[spec.name] = timetableProfile(r.stderr);
+        if (profiles[spec.name] === null) throw Error("missing_timetable_profile");
+      }
+      if (spec.module) {
+        if (!Array.isArray(data)) throw Error("incomplete_timetable");
+        moduleMatches[spec.module] = isDeepStrictEqual(
+          reference?.timetable.snapshots[spec.module], data,
+        );
+        if (!moduleMatches[spec.module]) throw Error("timetable_module_mismatch");
+        modules[spec.module] = data;
+        timetableFinished = performance.now();
+      } else if (spec.name === "timetable") {
         if (
           !data.snapshots ||
           !isDeepStrictEqual(
@@ -366,7 +423,7 @@ async function batch(mode, round) {
         if (!Array.isArray(data)) throw Error("invalid_grades");
       } else if (data.completeness !== "complete" || !Array.isArray(data.items))
         throw Error("incomplete_notices");
-      results[spec.name] = data;
+      if (!spec.module) results[spec.name] = data;
       timings[spec.name] = r.ms;
     } catch (e) {
       const failure = Object.assign(Error("operation_failed"), {
@@ -378,6 +435,8 @@ async function batch(mode, round) {
               "invalid_grades",
               "incomplete_notices",
               "missing_notice_diagnostics",
+              "missing_timetable_profile",
+              "timetable_module_mismatch",
             ].includes(e.message)
               ? e.message
               : "invalid_or_failed_output",
@@ -386,7 +445,7 @@ async function batch(mode, round) {
       });
       firstFailure ??= failure;
       failures.push(failure.safe);
-      if (!diagnose) stopAll();
+      if (!diagnose && mode !== "parallel8") stopAll();
       throw failure;
     }
   }
@@ -395,7 +454,21 @@ async function batch(mode, round) {
       for (const spec of operations) await operation(spec);
     } else {
       let tasks;
-      if (scenario.startsWith("pause-")) {
+      if (mode === "parallel8") {
+        const queue = [
+          allOperations[3], allOperations[2], allOperations[0],
+          ...expectedModules.map((module) => ({
+            name: `timetable_${module}`,
+            module,
+            args: ["timetable", "--module", module, "--json", "--profile"],
+          })),
+        ];
+        let next = 0;
+        tasks = Array.from({ length: 8 }, async () => {
+          while (!firstFailure && next < queue.length)
+            await operation(queue[next++]);
+        });
+      } else if (scenario.startsWith("pause-")) {
         let release;
         const ready = new Promise((resolve) => {
           release = resolve;
@@ -433,8 +506,18 @@ async function batch(mode, round) {
       const settled = await Promise.allSettled(tasks);
       const failed = settled.filter((x) => x.status === "rejected");
       if (failed.length) throw firstFailure;
+      if (mode === "parallel8") {
+        if (!isDeepStrictEqual(Object.keys(modules).sort(), expectedModules))
+          throw Object.assign(Error("incomplete_timetable"), {
+            safe: { reason: "incomplete_timetable" },
+          });
+        results.timetable = { snapshots: modules };
+      }
     }
   } catch (error) {
+    firstFailure ??= Object.assign(Error("batch_failed"), {
+      safe: error.safe ?? { reason: "batch_failed" },
+    });
     const summary = failureSummary();
     document.batches.push(summary);
     console.log(JSON.stringify(summary));
@@ -455,6 +538,11 @@ async function batch(mode, round) {
     operationsMs: timings,
     matchesReference: equality,
     ...(diagnose ? { diagnostics } : {}),
+    ...(scenario === "eight-way" ? {
+      profiles, moduleMatches, callsStarted,
+      ...(timetableStarted === undefined
+        ? {} : { timetableSpanMs: timetableFinished - timetableStarted }),
+    } : {}),
   };
   document.batches.push(summary);
   console.log(JSON.stringify(summary));
@@ -474,16 +562,19 @@ try {
     throw Object.assign(Error("authentication_unavailable"), {
       safe: { reason: "authentication_unavailable" },
     });
-  for (let round = 1; round <= rounds; round++)
-    for (const mode of round % 2 === 1
-      ? ["serial", "parallel4"]
-      : ["parallel4", "serial"])
+  for (let round = 1; round <= rounds; round++) {
+    const modes = scenario === "eight-way"
+      ? ["serial", "parallel4", "parallel8"] : ["serial", "parallel4"];
+    if (round % 2 === 0) modes.reverse();
+    for (const mode of modes)
       await batch(
         mode === "parallel4" && !scenario.endsWith("four-way")
+          && scenario !== "eight-way"
           ? "concurrent"
           : mode,
         round,
       );
+  }
   document.success = true;
 } catch (e) {
   document.failure = e.safe ?? { reason: "probe_failed" };
