@@ -118,6 +118,15 @@ investigating that overhead. Report measured timings separately from proposed
 optimizations; an unidentified initial module does not justify skipping its
 explicit selection.
 
+For a requested connection-reuse experiment, compare the normal profiled batch
+with `timetable --all --json --profile --reuse-connections`. This experimental
+flag requires both `--all` and `--profile`; leave it off routine reads. It uses
+sequential GET requests, one connection at a time, pipeline depth one, and no
+automatic retries, then closes the pool. The profile reports `transport` as
+`default` or `reuse`. `connectionsCreated` is unknown (`null`) for the default
+transport; the reuse count measures created connection objects, not successful
+sockets. Verify equality of complete timetable outputs when comparing variants.
+
 ## Change registration
 
 Treat `registration add`, `registration remove`, and any `raw --event` submission as account-changing operations.

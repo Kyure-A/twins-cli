@@ -93,6 +93,7 @@ val timetable_entry_to_yojson : timetable_entry -> Yojson.Safe.t
 
 val timetable_all :
   ?session_file:string ->
+  ?reuse_connections:bool ->
   unit ->
   ((Module.t * timetable_entry list) list, Error.t) result
 

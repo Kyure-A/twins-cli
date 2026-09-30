@@ -136,6 +136,22 @@ time separately. On an operational failure, the profile line precedes the usual
 error line and the exit status is unchanged. Without `--profile`, stderr keeps
 its existing format. Argument-parser syntax errors do not emit a profile.
 
+For an experimental connection-reuse comparison, run both variants:
+
+```console
+twins timetable --all --json --profile
+twins timetable --all --json --profile --reuse-connections
+```
+
+`--reuse-connections` requires both `--all` and `--profile`; it is not the default
+transport. The experiment uses a GET-only pool with one connection at a time,
+pipeline depth one, and no automatic retries. Requests remain sequential and
+the pool closes at the end of the read, including failures. Profiles identify
+`transport` as `default` or `reuse`; `connectionsCreated` is `null` for the default
+transport, or the number of connection objects created by the experimental
+pool. This count does not prove successful socket connections. Compare complete
+timetable outputs as well as timings before drawing conclusions.
+
 ### Notice pagination and completeness
 
 Notice searches follow explicit Next links and the observed CampusSquare

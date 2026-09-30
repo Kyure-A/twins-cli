@@ -437,43 +437,50 @@ let timetable_exn ?session_file module_ =
 let timetable ?session_file module_ =
   Internal_error.protect (fun () -> timetable_exn ?session_file module_)
 
-let timetable_all ?session_file () =
+let timetable_all ?session_file ?(reuse_connections = false) () =
   Internal_error.protect (fun () ->
-      with_session ?session_file (fun session ->
-          Timetable_batch.collect
-            ~start:(fun () ->
-              Profile.scope Profile.Initial_flow (fun () ->
-                  let page = start_flow session "RSW0001000-flow" in
-                  (if Profile.enabled () then
-                     let recognized =
-                       Html.table_by_id "auto-table-2-2" page.soup <> None
-                       || Html.table_by_headers
-                            [ "月曜日"; "火曜日"; "水曜日"; "木曜日"; "金曜日" ]
-                            page.soup
-                          <> None
-                     in
-                     Profile.initial_flow ~timetable_recognized:recognized
-                       ~selected_module:
-                         (Timetable_batch.selected_module page.soup));
-                  page))
-            ~flow_key
-            ~select:(fun ~key module_ ->
-              Profile.scope
-                ?module_:(Profile.module_of_slug (Module.to_string module_))
-                Profile.Module_fetch
-                (fun () -> select_registration_module session ~key module_))
-            ~parse:(fun module_ page ->
-              let profile_module =
-                Profile.module_of_slug (Module.to_string module_)
-              in
-              let module_code, term_code = Module.codes module_ in
-              Profile.measure ?module_:profile_module Profile.Selection_check
-                (fun () ->
-                  Timetable_batch.validate_selection ~module_code ~term_code
-                    page.soup);
-              Profile.measure ?module_:profile_module Profile.Timetable_parse
-                (fun () -> parse_timetable_exn module_ page.soup))
-            Module.all))
+      let read () =
+        with_session ?session_file (fun session ->
+            Timetable_batch.collect
+              ~start:(fun () ->
+                Profile.scope Profile.Initial_flow (fun () ->
+                    let page = start_flow session "RSW0001000-flow" in
+                    (if Profile.enabled () then
+                       let recognized =
+                         Html.table_by_id "auto-table-2-2" page.soup <> None
+                         || Html.table_by_headers
+                              [ "月曜日"; "火曜日"; "水曜日"; "木曜日"; "金曜日" ]
+                              page.soup
+                            <> None
+                       in
+                       Profile.initial_flow ~timetable_recognized:recognized
+                         ~selected_module:
+                           (Timetable_batch.selected_module page.soup));
+                    page))
+              ~flow_key
+              ~select:(fun ~key module_ ->
+                Profile.scope
+                  ?module_:(Profile.module_of_slug (Module.to_string module_))
+                  Profile.Module_fetch
+                  (fun () -> select_registration_module session ~key module_))
+              ~parse:(fun module_ page ->
+                let profile_module =
+                  Profile.module_of_slug (Module.to_string module_)
+                in
+                let module_code, term_code = Module.codes module_ in
+                Profile.measure ?module_:profile_module Profile.Selection_check
+                  (fun () ->
+                    Timetable_batch.validate_selection ~module_code ~term_code
+                      page.soup);
+                Profile.measure ?module_:profile_module Profile.Timetable_parse
+                  (fun () -> parse_timetable_exn module_ page.soup))
+              Module.all)
+      in
+      if reuse_connections then (
+        if not (Profile.enabled ()) then
+          Internal_error.invalidf "connection reuse requires profiling";
+        Http_client.with_reused_connections read)
+      else read ())
 
 let timetable_snapshots_to_yojson snapshots =
   `Assoc

@@ -199,7 +199,13 @@ let timetable_command =
       value & flag
       & info [ "profile" ] ~doc:"取得処理の機密情報を含まない計測 JSON を標準エラーに出力します。")
   in
-  let execute session_file selected_module all json profile =
+  let reuse_connections =
+    Arg.(
+      value & flag
+      & info [ "reuse-connections" ]
+          ~doc:"--all --profile の比較計測でのみ HTTP 接続を再利用します。")
+  in
+  let execute session_file selected_module all json profile reuse_connections =
     run ~json_errors:json (fun () ->
         Profile.run ~enabled:profile
           ~emit:(fun report ->
@@ -207,9 +213,16 @@ let timetable_command =
             output_char stderr '\n';
             flush stderr)
           (fun () ->
+            if reuse_connections && ((not all) || not profile) then
+              raise
+                (Cli_error
+                   (Error.Invalid_argument
+                      "--reuse-connections requires --all --profile"));
             let snapshots =
               match (all, selected_module) with
-              | true, None -> Twins.timetable_all ?session_file () |> unwrap
+              | true, None ->
+                  Twins.timetable_all ?session_file ~reuse_connections ()
+                  |> unwrap
               | false, Some slug ->
                   let module_ = Twins.Module.of_string slug |> unwrap in
                   [ (module_, Twins.timetable ?session_file module_ |> unwrap) ]
@@ -250,7 +263,9 @@ let timetable_command =
   in
   Cmd.v
     (Cmd.info "timetable" ~doc:"履修時間割を表示します。")
-    Term.(const execute $ session $ selected_module $ all $ json $ profile)
+    Term.(
+      const execute $ session $ selected_module $ all $ json $ profile
+      $ reuse_connections)
 
 let course_code =
   Arg.(required & pos 0 (some string) None & info [] ~docv:"COURSE_CODE")

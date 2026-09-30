@@ -58,10 +58,20 @@ type state = {
   mutable http : Yojson.Safe.t list;
   mutable hops : int;
   mutable initial : Yojson.Safe.t option;
+  mutable connections : int option;
 }
 
 let active = ref None
 let enabled () = !active <> None
+
+let reuse_connections () =
+  Option.iter (fun state -> state.connections <- Some 0) !active
+
+let connection_created () =
+  Option.iter
+    (fun state ->
+      state.connections <- Option.map (fun count -> count + 1) state.connections)
+    !active
 
 let report state success =
   `Assoc
@@ -74,6 +84,15 @@ let report state success =
              outcome success;
            ]
           @ durations state.started (now ())
+          @ [
+              ( "transport",
+                `String
+                  (if state.connections = None then "default" else "reuse") );
+              ( "connectionsCreated",
+                match state.connections with
+                | None -> `Null
+                | Some count -> `Int count );
+            ]
           @ [
               ("stages", `List (List.rev state.stages));
               ("http", `List (List.rev state.http));
@@ -96,6 +115,7 @@ let run ~enabled ~emit operation =
         http = [];
         hops = 0;
         initial = None;
+        connections = None;
       }
     in
     active := Some state;

@@ -14,6 +14,8 @@ type module_
 
 val module_of_slug : string -> module_ option
 val enabled : unit -> bool
+val reuse_connections : unit -> unit
+val connection_created : unit -> unit
 val run : enabled:bool -> emit:(Yojson.Safe.t -> unit) -> (unit -> 'a) -> 'a
 val measure : ?module_:module_ -> stage -> (unit -> 'a) -> 'a
 val scope : ?module_:module_ -> stage -> (unit -> 'a) -> 'a

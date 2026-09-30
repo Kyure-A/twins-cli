@@ -52,11 +52,51 @@ let send_with ~call ~read_body ~headers meth uri body =
       Profile.http_failed hop;
       Lwt.fail exn)
 
+let default_call ?body ~headers meth uri =
+  Cohttp_lwt_unix.Client.call ?body ~headers meth uri
+
+let current_call = ref default_call
+
+(* This scope is synchronous, like timetable_all: its operation completes each
+   Lwt request before returning. Never install this transport for a mutation or
+   enable Cohttp's default automatic retries. The pool has no public close-all
+   API, so track every created handle and close it on all exit paths. *)
+let with_reused_connections operation =
+  let module Base = Cohttp_lwt_unix.Connection in
+  let opened = ref [] in
+  let module Tracked = struct
+    include Base
+
+    let create ?finalise ?persistent ?ctx endpoint =
+      let connection = Base.create ?finalise ?persistent ?ctx endpoint in
+      opened := connection :: !opened;
+      Profile.connection_created ();
+      connection
+  end in
+  let module Sleep = struct
+    let sleep_ns ns = Lwt_unix.sleep (Int64.to_float ns /. 1_000_000_000.)
+  end in
+  let module Pool = Cohttp_lwt.Connection_cache.Make (Tracked) (Sleep) in
+  let pool = Pool.create ~retry:0 ~parallel:1 ~depth:1 () in
+  let previous = !current_call in
+  let call ?body ~headers meth uri =
+    if meth <> `GET then
+      Internal_error.invalidf
+        "connection reuse is only available for read-only GET requests";
+    Pool.call pool ?body ~headers meth uri
+  in
+  Profile.reuse_connections ();
+  current_call := call;
+  Fun.protect
+    ~finally:(fun () ->
+      current_call := previous;
+      List.iter Base.close !opened;
+      opened := [])
+    operation
+
 let send ~headers meth uri body =
-  send_with
-    ~call:(fun ?body ~headers meth uri ->
-      Cohttp_lwt_unix.Client.call ?body ~headers meth uri)
-    ~read_body:Cohttp_lwt.Body.to_string ~headers meth uri body
+  send_with ~call:!current_call ~read_body:Cohttp_lwt.Body.to_string ~headers
+    meth uri body
 
 let rec request_lwt ?(send = send) ?body
     ?(extra_headers = Cohttp.Header.init ()) session meth uri redirects =

@@ -53,3 +53,14 @@
   ../lib/.twins.objs/byte/http_client.cmi
   ../lib/.twins.objs/byte/internal_error.cmi)
  (libraries alcotest twins cohttp-lwt-unix lwt.unix))
+
+(test
+ (name test_http_pool)
+ (modules test_http_pool)
+ (flags (:standard -I lib/.twins.objs/byte))
+ (preprocess (action (run cat %{input-file})))
+ (preprocessor_deps
+  ../lib/.twins.objs/byte/session.cmi
+  ../lib/.twins.objs/byte/http_client.cmi
+  ../lib/.twins.objs/byte/internal_error.cmi)
+ (libraries alcotest twins cohttp-lwt-unix lwt.unix))

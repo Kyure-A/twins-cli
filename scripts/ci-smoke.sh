@@ -22,6 +22,7 @@ grep -q -- '-y, --yes' <<<"$registration_help"
 timetable_help=$("${cli[@]}" timetable --help=plain)
 grep -q -- '--all' <<<"$timetable_help"
 grep -q -- '--profile' <<<"$timetable_help"
+grep -q -- '--reuse-connections' <<<"$timetable_help"
 
 menu_output=$("${cli[@]}" menu)
 grep -q $'registration\tRSW0001000-flow' <<<"$menu_output"
@@ -45,9 +46,38 @@ expect_timetable_json_error() {
     "{\"error\":{\"code\":\"$expected_code\"}}"
 }
 
+expect_profiled_timetable_error() {
+  local expected_code=$1
+  shift
+  local status=0
+  "${cli[@]}" timetable --json --profile --session "$session_file" "$@" \
+    > "$smoke_directory/profile.stdout" \
+    2> "$smoke_directory/profile.stderr" || status=$?
+  test "$status" -eq 1
+  test ! -s "$smoke_directory/profile.stdout"
+  {
+    IFS= read -r profile_line
+    IFS= read -r error_line
+    if IFS= read -r extra_line; then
+      exit 1
+    fi
+  } < "$smoke_directory/profile.stderr"
+  grep -q '^{"profile":{' <<<"$profile_line"
+  grep -Fq '"version":1' <<<"$profile_line"
+  grep -Fq '"operation":"timetable"' <<<"$profile_line"
+  grep -Fq '"outcome":"failure"' <<<"$profile_line"
+  grep -Fq '"http":[]' <<<"$profile_line"
+  test "$error_line" = "{\"error\":{\"code\":\"$expected_code\"}}"
+}
+
 expect_timetable_json_error invalid_argument
 expect_timetable_json_error invalid_argument --all --module autumn-a
 expect_timetable_json_error invalid_argument --module winter-z
+expect_timetable_json_error invalid_argument --all --reuse-connections
+expect_profiled_timetable_error invalid_argument --module autumn-a --reuse-connections
+grep -Fq '"stages":[]' <<<"$profile_line"
+grep -Fq '"transport":"default"' <<<"$profile_line"
+grep -Fq '"connectionsCreated":null' <<<"$profile_line"
 test ! -e "$session_file"
 
 status_output=$("${cli[@]}" auth status --session "$session_file")
@@ -127,21 +157,14 @@ cmp "$session_file" "$session_file.before"
 
 # Profiling preserves the same local failure and adds one separate JSON line.
 # The synthetic legacy session fails before any HTTP request or cookie write.
-profile_status=0
-"${cli[@]}" timetable --all --json --profile --session "$session_file" \
-  > "$smoke_directory/profile.stdout" \
-  2> "$smoke_directory/profile.stderr" || profile_status=$?
-test "$profile_status" -eq 1
-test ! -s "$smoke_directory/profile.stdout"
-{
-  IFS= read -r profile_line
-  IFS= read -r error_line
-  if IFS= read -r extra_line; then
-    exit 1
-  fi
-} < "$smoke_directory/profile.stderr"
-grep -q '^{"profile":{"version":1,"operation":"timetable","outcome":"failure",' <<<"$profile_line"
-grep -q '"stage":"session_load","outcome":"failure"' <<<"$profile_line"
-grep -q '"http":\[\]' <<<"$profile_line"
-test "$error_line" = '{"error":{"code":"protocol_error"}}'
+expect_profiled_timetable_error protocol_error --all
+grep -Fq '"stage":"session_load","outcome":"failure"' <<<"$profile_line"
+grep -Fq '"transport":"default"' <<<"$profile_line"
+grep -Fq '"connectionsCreated":null' <<<"$profile_line"
+cmp "$session_file" "$session_file.before"
+
+expect_profiled_timetable_error protocol_error --all --reuse-connections
+grep -Fq '"stage":"session_load","outcome":"failure"' <<<"$profile_line"
+grep -Fq '"transport":"reuse"' <<<"$profile_line"
+grep -Fq '"connectionsCreated":0' <<<"$profile_line"
 cmp "$session_file" "$session_file.before"
