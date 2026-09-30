@@ -1,0 +1,5451 @@
+{
+  "description": "Timetable fetch performance measurements; no timetable payloads, credentials, cookies, URLs or flow keys retained.",
+  "experiments": [
+    {
+      "measuredAt": "2026-09-30T04:20:09.982Z",
+      "flake": "github:Kyure-A/twins-cli/0c2dd347ee616ef9193f3e429cabdbbfaab19e44",
+      "mode": "baseline",
+      "method": "Sequential canonical GitHub flake runs after help warmup; registration reads only. Stdout stays in memory and is compared in full without retaining timetable contents. Stage times are nested and must not be added wholesale. headersMs combines resolution, TCP/TLS, request transmission and waiting for response headers. outsideProfileMs also includes process/CLI startup and exit, not solely Nix.",
+      "trials": [
+        {
+          "round": 1,
+          "variant": "default",
+          "matchesBaseline": true,
+          "summary": {
+            "externalMs": 4884.743,
+            "cliMs": 4263.164,
+            "cliCpuMs": 510.82,
+            "outsideProfileMs": 621.579,
+            "httpCount": 18,
+            "headersMs": 2570.473,
+            "bodyMs": 1270.251,
+            "responseBytes": 2515618,
+            "htmlParseMs": 391.807,
+            "timetableParseMs": 17.81,
+            "selectionCheckMs": 3.739,
+            "sessionLoadMs": 1.202,
+            "sessionSaveMs": 0.439,
+            "jsonOutputMs": 0.838,
+            "initialFlowMs": 396.216,
+            "moduleFetchMs": 3841.936,
+            "statusCounts": {
+              "200": 9,
+              "302": 9
+            },
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          },
+          "profile": {
+            "version": 1,
+            "operation": "timetable",
+            "outcome": "success",
+            "wallMs": 4263.163805007935,
+            "cpuMs": 510.81999999999994,
+            "stages": [
+              {
+                "stage": "session_load",
+                "outcome": "success",
+                "wallMs": 1.2018680572509766,
+                "cpuMs": 0.45999999999990493
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0020000000000575113
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "wallMs": 48.91395568847656,
+                "cpuMs": 48.702999999999996
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.3459453582763672,
+                "cpuMs": 0.3449999999999842
+              },
+              {
+                "stage": "initial_flow",
+                "outcome": "success",
+                "wallMs": 396.21591567993164,
+                "cpuMs": 64.34600000000002
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 47.866106033325195,
+                "cpuMs": 47.64600000000002
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.38909912109375,
+                "cpuMs": 0.3889999999999727
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 554.8670291900635,
+                "cpuMs": 59.74999999999997
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.47397613525390625,
+                "cpuMs": 0.4710000000001102
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 2.228975296020508,
+                "cpuMs": 2.2250000000000325
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.0019073486328125,
+                "cpuMs": 0.0020000000000575113
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 47.89400100708008,
+                "cpuMs": 47.86100000000004
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.3669261932373047,
+                "cpuMs": 0.3670000000000062
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 547.0919609069824,
+                "cpuMs": 57.93400000000004
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.4742145538330078,
+                "cpuMs": 0.47399999999997444
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 2.3109912872314453,
+                "cpuMs": 2.3079999999999767
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.0021457672119140625,
+                "cpuMs": 0.001999999999946489
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 43.84207725524902,
+                "cpuMs": 43.799000000000035
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.4010200500488281,
+                "cpuMs": 0.4030000000000422
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 415.071964263916,
+                "cpuMs": 52.13200000000007
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.49495697021484375,
+                "cpuMs": 0.49399999999999444
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 2.0301342010498047,
+                "cpuMs": 2.0259999999999723
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0010000000000287557
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 39.54815864562988,
+                "cpuMs": 39.533000000000044
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.4038810729980469,
+                "cpuMs": 0.40400000000007097
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 358.4740161895752,
+                "cpuMs": 50.40800000000001
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.47087669372558594,
+                "cpuMs": 0.4709999999999992
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 2.3651123046875,
+                "cpuMs": 2.222999999999975
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0020000000000575113
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 36.467790603637695,
+                "cpuMs": 36.417000000000144
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.34499168395996094,
+                "cpuMs": 0.3449999999999287
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 571.8770027160645,
+                "cpuMs": 44.269000000000005
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.4191398620605469,
+                "cpuMs": 0.4189999999999472
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 2.2478103637695312,
+                "cpuMs": 2.2480000000000278
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.0011920928955078125,
+                "cpuMs": 0.0010000000000287557
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 36.08202934265137,
+                "cpuMs": 36.07000000000005
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.41294097900390625,
+                "cpuMs": 0.40999999999991044
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 556.9770336151123,
+                "cpuMs": 46.47999999999997
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.4401206970214844,
+                "cpuMs": 0.43999999999999595
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 2.438068389892578,
+                "cpuMs": 2.4170000000001135
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.001999999999946489
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 45.92108726501465,
+                "cpuMs": 45.82200000000003
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.40912628173828125,
+                "cpuMs": 0.41000000000002146
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 459.96904373168945,
+                "cpuMs": 58.01100000000004
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.47397613525390625,
+                "cpuMs": 0.47399999999997444
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 2.256155014038086,
+                "cpuMs": 2.2520000000001428
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.0019073486328125,
+                "cpuMs": 0.001999999999946489
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 45.271873474121094,
+                "cpuMs": 45.220999999999954
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.39696693420410156,
+                "cpuMs": 0.39599999999995195
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 377.6078224182129,
+                "cpuMs": 53.380000000000095
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.49185752868652344,
+                "cpuMs": 0.4890000000000727
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 1.9328594207763672,
+                "cpuMs": 1.931000000000016
+              },
+              {
+                "stage": "session_save",
+                "outcome": "success",
+                "wallMs": 0.43892860412597656,
+                "cpuMs": 0.43899999999985617
+              },
+              {
+                "stage": "json_output",
+                "outcome": "success",
+                "wallMs": 0.8380413055419922,
+                "cpuMs": 0.8369999999999767
+              }
+            ],
+            "http": [
+              {
+                "index": 1,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 125.46205520629883,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 2,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 83.69112014770508,
+                "bodyMs": 136.5809440612793,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 3,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 260.7579231262207,
+                "bodyMs": 0.0030994415283203125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 4,
+                "status": 200,
+                "bytes": 299287,
+                "headersMs": 87.6460075378418,
+                "bodyMs": 158.06007385253906,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 5,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 242.65789985656738,
+                "bodyMs": 0.0030994415283203125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 6,
+                "status": 200,
+                "bytes": 291093,
+                "headersMs": 95.53909301757812,
+                "bodyMs": 160.4599952697754,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 7,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 159.2581272125244,
+                "bodyMs": 0.00286102294921875,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 8,
+                "status": 200,
+                "bytes": 268519,
+                "headersMs": 88.55295181274414,
+                "bodyMs": 122.89810180664062,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 9,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 93.57595443725586,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 10,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 86.83490753173828,
+                "bodyMs": 138.00907135009766,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 11,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 300.8458614349365,
+                "bodyMs": 0.0011920928955078125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 12,
+                "status": 200,
+                "bytes": 307197,
+                "headersMs": 93.38879585266113,
+                "bodyMs": 140.72608947753906,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 13,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 291.86010360717773,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 14,
+                "status": 200,
+                "bytes": 310135,
+                "headersMs": 88.09900283813477,
+                "bodyMs": 140.4101848602295,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 15,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 193.57895851135254,
+                "bodyMs": 0.0011920928955078125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 16,
+                "status": 200,
+                "bytes": 285062,
+                "headersMs": 83.35709571838379,
+                "bodyMs": 136.60597801208496,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 17,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 111.73582077026367,
+                "bodyMs": 0.0021457672119140625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              },
+              {
+                "index": 18,
+                "status": 200,
+                "bytes": 255045,
+                "headersMs": 83.63103866577148,
+                "bodyMs": 136.48104667663574,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              }
+            ],
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          }
+        },
+        {
+          "round": 2,
+          "variant": "default",
+          "matchesBaseline": true,
+          "summary": {
+            "externalMs": 4305.102,
+            "cliMs": 4101.571,
+            "cliCpuMs": 448.769,
+            "outsideProfileMs": 203.531,
+            "httpCount": 18,
+            "headersMs": 2547.358,
+            "bodyMs": 1181.702,
+            "responseBytes": 2515618,
+            "htmlParseMs": 342.55,
+            "timetableParseMs": 17.23,
+            "selectionCheckMs": 3.606,
+            "sessionLoadMs": 1.328,
+            "sessionSaveMs": 0.518,
+            "jsonOutputMs": 0.836,
+            "initialFlowMs": 412.086,
+            "moduleFetchMs": 3665.044,
+            "statusCounts": {
+              "200": 9,
+              "302": 9
+            },
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          },
+          "profile": {
+            "version": 1,
+            "operation": "timetable",
+            "outcome": "success",
+            "wallMs": 4101.570844650269,
+            "cpuMs": 448.76899999999995,
+            "stages": [
+              {
+                "stage": "session_load",
+                "outcome": "success",
+                "wallMs": 1.3279914855957031,
+                "cpuMs": 0.38799999999999946
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "wallMs": 39.65306282043457,
+                "cpuMs": 39.61500000000001
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.3139972686767578,
+                "cpuMs": 0.3150000000000097
+              },
+              {
+                "stage": "initial_flow",
+                "outcome": "success",
+                "wallMs": 412.08600997924805,
+                "cpuMs": 51.70099999999999
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 39.50214385986328,
+                "cpuMs": 39.385000000000005
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.3910064697265625,
+                "cpuMs": 0.39100000000000246
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 511.28411293029785,
+                "cpuMs": 48.373
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.5059242248535156,
+                "cpuMs": 0.5060000000000064
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 2.0859241485595703,
+                "cpuMs": 2.0639999999999823
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.0011920928955078125,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 48.42805862426758,
+                "cpuMs": 48.33599999999999
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.35691261291503906,
+                "cpuMs": 0.35600000000002296
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 485.6679439544678,
+                "cpuMs": 56.751
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.45609474182128906,
+                "cpuMs": 0.45599999999995644
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 2.3441314697265625,
+                "cpuMs": 2.3300000000000267
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 44.73710060119629,
+                "cpuMs": 44.63099999999998
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.38814544677734375,
+                "cpuMs": 0.38799999999999946
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 404.1280746459961,
+                "cpuMs": 54.201
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.4780292510986328,
+                "cpuMs": 0.47799999999997844
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 1.956939697265625,
+                "cpuMs": 1.9569999999999865
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 30.636072158813477,
+                "cpuMs": 30.501000000000055
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.6031990051269531,
+                "cpuMs": 0.6019999999999914
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 313.17615509033203,
+                "cpuMs": 40.57699999999998
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.4100799560546875,
+                "cpuMs": 0.41000000000002146
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 1.7099380493164062,
+                "cpuMs": 1.6930000000000556
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.0011920928955078125,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 47.9738712310791,
+                "cpuMs": 47.79200000000006
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.3771781921386719,
+                "cpuMs": 0.3730000000000122
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 579.3130397796631,
+                "cpuMs": 57.68699999999999
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.45609474182128906,
+                "cpuMs": 0.45600000000001195
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 2.4869441986083984,
+                "cpuMs": 2.483999999999986
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 35.433053970336914,
+                "cpuMs": 35.355999999999945
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.43892860412597656,
+                "cpuMs": 0.4390000000000227
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 568.2039260864258,
+                "cpuMs": 45.61999999999999
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.5068778991699219,
+                "cpuMs": 0.5060000000000064
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 2.6121139526367188,
+                "cpuMs": 2.6109999999999745
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0,
+                "cpuMs": 0
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 21.296977996826172,
+                "cpuMs": 21.23400000000003
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.331878662109375,
+                "cpuMs": 0.33199999999999896
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 451.8730640411377,
+                "cpuMs": 30.059999999999974
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.3528594970703125,
+                "cpuMs": 0.35200000000001896
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 1.706838607788086,
+                "cpuMs": 1.7059999999999853
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 34.889936447143555,
+                "cpuMs": 34.594999999999985
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.4038810729980469,
+                "cpuMs": 0.4029999999999312
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 351.3979911804199,
+                "cpuMs": 40.44700000000001
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.4398822784423828,
+                "cpuMs": 0.43999999999999595
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 2.32696533203125,
+                "cpuMs": 2.222999999999975
+              },
+              {
+                "stage": "session_save",
+                "outcome": "success",
+                "wallMs": 0.5180835723876953,
+                "cpuMs": 0.5169999999999897
+              },
+              {
+                "stage": "json_output",
+                "outcome": "success",
+                "wallMs": 0.8358955383300781,
+                "cpuMs": 0.8350000000000302
+              }
+            ],
+            "http": [
+              {
+                "index": 1,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 122.27606773376465,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 2,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 94.12193298339844,
+                "bodyMs": 154.57820892333984,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 3,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 264.3170356750488,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 4,
+                "status": 200,
+                "bytes": 299287,
+                "headersMs": 86.76409721374512,
+                "bodyMs": 120.22185325622559,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 5,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 235.6851100921631,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 6,
+                "status": 200,
+                "bytes": 291093,
+                "headersMs": 83.46295356750488,
+                "bodyMs": 117.59400367736816,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 7,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 154.27494049072266,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 8,
+                "status": 200,
+                "bytes": 268519,
+                "headersMs": 85.66617965698242,
+                "bodyMs": 118.95394325256348,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 9,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 87.13912963867188,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 10,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 90.05594253540039,
+                "bodyMs": 104.67386245727539,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 11,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 283.0770015716553,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 12,
+                "status": 200,
+                "bytes": 307197,
+                "headersMs": 87.86296844482422,
+                "bodyMs": 159.90805625915527,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 13,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 298.4778881072998,
+                "bodyMs": 0.0021457672119140625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 14,
+                "status": 200,
+                "bytes": 310135,
+                "headersMs": 82.75103569030762,
+                "bodyMs": 150.9990692138672,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 15,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 206.2671184539795,
+                "bodyMs": 0.00286102294921875,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 16,
+                "status": 200,
+                "bytes": 285062,
+                "headersMs": 87.10193634033203,
+                "bodyMs": 136.77597045898438,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 17,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 106.3699722290039,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              },
+              {
+                "index": 18,
+                "status": 200,
+                "bytes": 255045,
+                "headersMs": 91.68696403503418,
+                "bodyMs": 117.9819107055664,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              }
+            ],
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          }
+        },
+        {
+          "round": 3,
+          "variant": "default",
+          "matchesBaseline": true,
+          "summary": {
+            "externalMs": 4380.755,
+            "cliMs": 4172.13,
+            "cliCpuMs": 500.559,
+            "outsideProfileMs": 208.625,
+            "httpCount": 18,
+            "headersMs": 2596.853,
+            "bodyMs": 1157.438,
+            "responseBytes": 2515618,
+            "htmlParseMs": 387.297,
+            "timetableParseMs": 17.08,
+            "selectionCheckMs": 3.91,
+            "sessionLoadMs": 1.527,
+            "sessionSaveMs": 0.455,
+            "jsonOutputMs": 0.84,
+            "initialFlowMs": 399.199,
+            "moduleFetchMs": 3748.171,
+            "statusCounts": {
+              "200": 9,
+              "302": 9
+            },
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          },
+          "profile": {
+            "version": 1,
+            "operation": "timetable",
+            "outcome": "success",
+            "wallMs": 4172.130107879639,
+            "cpuMs": 500.55899999999997,
+            "stages": [
+              {
+                "stage": "session_load",
+                "outcome": "success",
+                "wallMs": 1.5268325805664062,
+                "cpuMs": 0.4760000000000042
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "wallMs": 49.38197135925293,
+                "cpuMs": 49.14099999999999
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.3440380096435547,
+                "cpuMs": 0.3439999999999832
+              },
+              {
+                "stage": "initial_flow",
+                "outcome": "success",
+                "wallMs": 399.1990089416504,
+                "cpuMs": 64.51899999999999
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 35.13193130493164,
+                "cpuMs": 34.94500000000001
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.3299713134765625,
+                "cpuMs": 0.32999999999999696
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 520.5841064453125,
+                "cpuMs": 45.63500000000001
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.3669261932373047,
+                "cpuMs": 0.3670000000000062
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 1.7409324645996094,
+                "cpuMs": 1.7389999999999906
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0010000000000287557
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 47.23787307739258,
+                "cpuMs": 47.03999999999997
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.3650188446044922,
+                "cpuMs": 0.36399999999997545
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 504.2300224304199,
+                "cpuMs": 56.73400000000001
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.4630088806152344,
+                "cpuMs": 0.4610000000000447
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 2.2640228271484375,
+                "cpuMs": 2.265000000000017
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0010000000000287557
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 28.317928314208984,
+                "cpuMs": 28.308
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.40411949157714844,
+                "cpuMs": 0.38399999999999546
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 406.40807151794434,
+                "cpuMs": 35.65000000000001
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.43392181396484375,
+                "cpuMs": 0.4310000000000147
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 1.8510818481445312,
+                "cpuMs": 1.851000000000047
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 41.44906997680664,
+                "cpuMs": 41.335999999999984
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.42510032653808594,
+                "cpuMs": 0.42399999999997995
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 343.1379795074463,
+                "cpuMs": 51.94399999999993
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.43702125549316406,
+                "cpuMs": 0.43399999999998995
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 1.7631053924560547,
+                "cpuMs": 1.7619999999999303
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.0021457672119140625,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 50.2619743347168,
+                "cpuMs": 50.19699999999999
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.3910064697265625,
+                "cpuMs": 0.38800000000005497
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 582.7600955963135,
+                "cpuMs": 60.50299999999997
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.492095947265625,
+                "cpuMs": 0.49199999999999244
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 2.6121139526367188,
+                "cpuMs": 2.5960000000000427
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 46.66900634765625,
+                "cpuMs": 46.15199999999997
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.41413307189941406,
+                "cpuMs": 0.41400000000002546
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 568.6030387878418,
+                "cpuMs": 55.70199999999998
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.4639625549316406,
+                "cpuMs": 0.46200000000001795
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 2.4569034576416016,
+                "cpuMs": 2.456999999999987
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.003000000000030756
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 47.38497734069824,
+                "cpuMs": 47.06999999999994
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.5848407745361328,
+                "cpuMs": 0.5850000000000577
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 456.51793479919434,
+                "cpuMs": 57.881000000000014
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.8101463317871094,
+                "cpuMs": 0.7449999999999957
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 2.402067184448242,
+                "cpuMs": 2.3859999999999992
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.0011920928955078125,
+                "cpuMs": 0
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 41.461944580078125,
+                "cpuMs": 40.81500000000005
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.3631114959716797,
+                "cpuMs": 0.36100000000016674
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 365.93008041381836,
+                "cpuMs": 48.40700000000009
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.4429817199707031,
+                "cpuMs": 0.4409999999999137
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 1.9900798797607422,
+                "cpuMs": 1.958999999999933
+              },
+              {
+                "stage": "session_save",
+                "outcome": "success",
+                "wallMs": 0.4551410675048828,
+                "cpuMs": 0.4549999999999832
+              },
+              {
+                "stage": "json_output",
+                "outcome": "success",
+                "wallMs": 0.8399486541748047,
+                "cpuMs": 0.8400000000000629
+              }
+            ],
+            "http": [
+              {
+                "index": 1,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 121.04415893554688,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 2,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 86.54212951660156,
+                "bodyMs": 140.66696166992188,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 3,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 276.752233505249,
+                "bodyMs": 0.00286102294921875,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 4,
+                "status": 200,
+                "bytes": 299287,
+                "headersMs": 88.79685401916504,
+                "bodyMs": 119.46415901184082,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 5,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 243.76511573791504,
+                "bodyMs": 0.00286102294921875,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 6,
+                "status": 200,
+                "bytes": 291093,
+                "headersMs": 89.65396881103516,
+                "bodyMs": 123.07906150817871,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 7,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 162.0330810546875,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 8,
+                "status": 200,
+                "bytes": 268519,
+                "headersMs": 88.82403373718262,
+                "bodyMs": 126.71899795532227,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 9,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 89.10894393920898,
+                "bodyMs": 0,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 10,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 106.1241626739502,
+                "bodyMs": 105.90291023254395,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 11,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 282.1691036224365,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 12,
+                "status": 200,
+                "bytes": 307197,
+                "headersMs": 89.47992324829102,
+                "bodyMs": 160.34507751464844,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 13,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 299.90410804748535,
+                "bodyMs": 0.00286102294921875,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 14,
+                "status": 200,
+                "bytes": 310135,
+                "headersMs": 85.3118896484375,
+                "bodyMs": 136.18707656860352,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 15,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 196.3977813720703,
+                "bodyMs": 0.0030994415283203125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 16,
+                "status": 200,
+                "bytes": 285062,
+                "headersMs": 90.24691581726074,
+                "bodyMs": 121.79207801818848,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 17,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 110.06903648376465,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              },
+              {
+                "index": 18,
+                "status": 200,
+                "bytes": 255045,
+                "headersMs": 90.63005447387695,
+                "bodyMs": 123.26288223266602,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              }
+            ],
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "measuredAt": "2026-09-30T04:24:00.858Z",
+      "flake": "github:Kyure-A/twins-cli/ac7e5fd7d0c0fb63742347e3d0db29ef3b73a043",
+      "mode": "compare",
+      "method": "Sequential canonical GitHub flake runs after help warmup; registration reads only. Stdout stays in memory and is compared in full without retaining timetable contents. Stage times are nested and must not be added wholesale. headersMs combines resolution, TCP/TLS, request transmission and waiting for response headers. outsideProfileMs also includes process/CLI startup and exit, not solely Nix.",
+      "trials": [
+        {
+          "round": 1,
+          "variant": "default",
+          "matchesBaseline": true,
+          "summary": {
+            "externalMs": 5406.64,
+            "cliMs": 4763.075,
+            "cliCpuMs": 477.501,
+            "outsideProfileMs": 643.564,
+            "httpCount": 18,
+            "headersMs": 3109.59,
+            "bodyMs": 1258.348,
+            "responseBytes": 2515618,
+            "htmlParseMs": 366.08,
+            "timetableParseMs": 17.126,
+            "selectionCheckMs": 3.685,
+            "sessionLoadMs": 0.97,
+            "sessionSaveMs": 0.436,
+            "jsonOutputMs": 0.835,
+            "initialFlowMs": 412.968,
+            "moduleFetchMs": 4326.14,
+            "statusCounts": {
+              "200": 9,
+              "302": 9
+            },
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          },
+          "profile": {
+            "version": 1,
+            "operation": "timetable",
+            "outcome": "success",
+            "wallMs": 4763.075113296509,
+            "cpuMs": 477.50100000000003,
+            "transport": "default",
+            "connectionsCreated": null,
+            "stages": [
+              {
+                "stage": "session_load",
+                "outcome": "success",
+                "wallMs": 0.9701251983642578,
+                "cpuMs": 0.34200000000000896
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0,
+                "cpuMs": 0
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "wallMs": 24.77717399597168,
+                "cpuMs": 24.763000000000034
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.2658367156982422,
+                "cpuMs": 0.2670000000000172
+              },
+              {
+                "stage": "initial_flow",
+                "outcome": "success",
+                "wallMs": 412.9679203033447,
+                "cpuMs": 36.146000000000015
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0,
+                "cpuMs": 0.0010000000000287557
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 29.952049255371094,
+                "cpuMs": 29.91900000000003
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.30994415283203125,
+                "cpuMs": 0.31000000000003247
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 548.5038757324219,
+                "cpuMs": 35.113999999999976
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.3948211669921875,
+                "cpuMs": 0.39600000000000746
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 1.9409656524658203,
+                "cpuMs": 1.9400000000000528
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0,
+                "cpuMs": 0.0010000000000287557
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 44.07191276550293,
+                "cpuMs": 43.983999999999966
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.35309791564941406,
+                "cpuMs": 0.3540000000000765
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 515.0439739227295,
+                "cpuMs": 53.26300000000006
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.43392181396484375,
+                "cpuMs": 0.43400000000004546
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 2.226114273071289,
+                "cpuMs": 2.222999999999975
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.0019073486328125,
+                "cpuMs": 0.0029999999998642224
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 44.137001037597656,
+                "cpuMs": 44.06299999999996
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.39505958557128906,
+                "cpuMs": 0.3950000000000342
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 680.1209449768066,
+                "cpuMs": 52.850999999999985
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.4589557647705078,
+                "cpuMs": 0.4549999999999832
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 1.9741058349609375,
+                "cpuMs": 1.970999999999945
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0029999999999752447
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 41.372060775756836,
+                "cpuMs": 41.32899999999995
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.3819465637207031,
+                "cpuMs": 0.3830000000000222
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 344.65980529785156,
+                "cpuMs": 53.774999999999906
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.4558563232421875,
+                "cpuMs": 0.45800000000006946
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 1.7971992492675781,
+                "cpuMs": 1.79499999999988
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.001999999999946489
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 49.02791976928711,
+                "cpuMs": 48.97600000000002
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.3910064697265625,
+                "cpuMs": 0.39000000000000146
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 793.2720184326172,
+                "cpuMs": 60.062999999999974
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.4901885986328125,
+                "cpuMs": 0.4870000000000152
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 2.5908946990966797,
+                "cpuMs": 2.5889999999999525
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.0011920928955078125,
+                "cpuMs": 0.0010000000000287557
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 43.356895446777344,
+                "cpuMs": 43.30900000000004
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.4239082336425781,
+                "cpuMs": 0.42200000000003346
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 576.9999027252197,
+                "cpuMs": 49.383999999999986
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.5011558532714844,
+                "cpuMs": 0.4989999999999162
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 2.4788379669189453,
+                "cpuMs": 2.4760000000000337
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0020000000000575113
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 44.27504539489746,
+                "cpuMs": 44.296
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.4119873046875,
+                "cpuMs": 0.4089999999999927
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 480.4110527038574,
+                "cpuMs": 58.60900000000002
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.4839897155761719,
+                "cpuMs": 0.48399999999992893
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 2.2859573364257812,
+                "cpuMs": 2.2820000000001173
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.0021457672119140625,
+                "cpuMs": 0.0029999999998642224
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 45.10998725891113,
+                "cpuMs": 44.983000000000104
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.38313865661621094,
+                "cpuMs": 0.38399999999993994
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 387.1281147003174,
+                "cpuMs": 54.95400000000006
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.4661083221435547,
+                "cpuMs": 0.4649999999999377
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 1.8320083618164062,
+                "cpuMs": 1.831000000000027
+              },
+              {
+                "stage": "session_save",
+                "outcome": "success",
+                "wallMs": 0.4360675811767578,
+                "cpuMs": 0.43599999999999195
+              },
+              {
+                "stage": "json_output",
+                "outcome": "success",
+                "wallMs": 0.8349418640136719,
+                "cpuMs": 0.8350000000000302
+              }
+            ],
+            "http": [
+              {
+                "index": 1,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 155.90715408325195,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 2,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 89.48493003845215,
+                "bodyMs": 141.59488677978516,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 3,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 265.9590244293213,
+                "bodyMs": 0.0011920928955078125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 4,
+                "status": 200,
+                "bytes": 299287,
+                "headersMs": 90.53206443786621,
+                "bodyMs": 161.69500350952148,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 5,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 244.83108520507812,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 6,
+                "status": 200,
+                "bytes": 291093,
+                "headersMs": 96.78196907043457,
+                "bodyMs": 128.89599800109863,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 7,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 422.7750301361084,
+                "bodyMs": 0.0030994415283203125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 8,
+                "status": 200,
+                "bytes": 268519,
+                "headersMs": 88.96780014038086,
+                "bodyMs": 123.69012832641602,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 9,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 104.77995872497559,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 10,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 89.8599624633789,
+                "bodyMs": 108.13498497009277,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 11,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 496.5670108795166,
+                "bodyMs": 0.0030994415283203125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 12,
+                "status": 200,
+                "bytes": 307197,
+                "headersMs": 87.03494071960449,
+                "bodyMs": 160.13598442077637,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 13,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 286.3430976867676,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 14,
+                "status": 200,
+                "bytes": 310135,
+                "headersMs": 91.62402153015137,
+                "bodyMs": 155.17401695251465,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 15,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 202.81219482421875,
+                "bodyMs": 0.00286102294921875,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 16,
+                "status": 200,
+                "bytes": 285062,
+                "headersMs": 90.57497978210449,
+                "bodyMs": 142.23003387451172,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 17,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 113.7688159942627,
+                "bodyMs": 0.0021457672119140625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              },
+              {
+                "index": 18,
+                "status": 200,
+                "bytes": 255045,
+                "headersMs": 90.98601341247559,
+                "bodyMs": 136.7781162261963,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              }
+            ],
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          }
+        },
+        {
+          "round": 1,
+          "variant": "reuse",
+          "matchesBaseline": true,
+          "summary": {
+            "externalMs": 2905.689,
+            "cliMs": 2715.846,
+            "cliCpuMs": 413.345,
+            "outsideProfileMs": 189.844,
+            "httpCount": 18,
+            "headersMs": 1572.681,
+            "bodyMs": 768.71,
+            "responseBytes": 2515618,
+            "htmlParseMs": 346.312,
+            "timetableParseMs": 16.313,
+            "selectionCheckMs": 3.392,
+            "sessionLoadMs": 1.148,
+            "sessionSaveMs": 0.392,
+            "jsonOutputMs": 0.815,
+            "initialFlowMs": 315.064,
+            "moduleFetchMs": 2377.767,
+            "statusCounts": {
+              "200": 9,
+              "302": 9
+            },
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          },
+          "profile": {
+            "version": 1,
+            "operation": "timetable",
+            "outcome": "success",
+            "wallMs": 2715.845823287964,
+            "cpuMs": 413.34499999999997,
+            "transport": "reuse",
+            "connectionsCreated": 1,
+            "stages": [
+              {
+                "stage": "session_load",
+                "outcome": "success",
+                "wallMs": 1.148223876953125,
+                "cpuMs": 0.4280000000000117
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "wallMs": 47.15085029602051,
+                "cpuMs": 47.08399999999999
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.34999847412109375,
+                "cpuMs": 0.3499999999999892
+              },
+              {
+                "stage": "initial_flow",
+                "outcome": "success",
+                "wallMs": 315.0639533996582,
+                "cpuMs": 58.98299999999998
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.0011920928955078125,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 45.93706130981445,
+                "cpuMs": 45.85900000000001
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.3578662872314453,
+                "cpuMs": 0.35800000000002496
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 423.2439994812012,
+                "cpuMs": 51.289
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.43582916259765625,
+                "cpuMs": 0.43599999999999195
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 2.2470951080322266,
+                "cpuMs": 2.246999999999999
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.0019073486328125,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 47.35112190246582,
+                "cpuMs": 47.288999999999994
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.3719329833984375,
+                "cpuMs": 0.3690000000000082
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 370.15295028686523,
+                "cpuMs": 51.72599999999999
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.4630088806152344,
+                "cpuMs": 0.4609999999999892
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 2.38800048828125,
+                "cpuMs": 2.3839999999999417
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.003000000000030756
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 46.144962310791016,
+                "cpuMs": 45.265
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.3590583801269531,
+                "cpuMs": 0.35800000000002496
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 244.66896057128906,
+                "cpuMs": 49.92600000000002
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.43892860412597656,
+                "cpuMs": 0.43800000000004946
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 1.9731521606445312,
+                "cpuMs": 1.9699999999999163
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0010000000000287557
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 35.83788871765137,
+                "cpuMs": 35.766999999999996
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.33402442932128906,
+                "cpuMs": 0.3329999999999722
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 144.0129280090332,
+                "cpuMs": 39.528000000000006
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.4229545593261719,
+                "cpuMs": 0.4229999999999512
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 1.7251968383789062,
+                "cpuMs": 1.7240000000000033
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 31.219005584716797,
+                "cpuMs": 31.177999999999983
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.3249645233154297,
+                "cpuMs": 0.3250000000000197
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 384.8409652709961,
+                "cpuMs": 35.819999999999965
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.4019737243652344,
+                "cpuMs": 0.39799999999995395
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 2.1750926971435547,
+                "cpuMs": 2.1669999999999745
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 27.456045150756836,
+                "cpuMs": 27.434999999999988
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.31185150146484375,
+                "cpuMs": 0.3130000000000077
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 377.8531551361084,
+                "cpuMs": 32.95300000000001
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.3879070281982422,
+                "cpuMs": 0.38799999999999946
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 2.0520687103271484,
+                "cpuMs": 2.0519999999999428
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 29.239177703857422,
+                "cpuMs": 29.22099999999994
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.33402442932128906,
+                "cpuMs": 0.3309999999999702
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 243.5891628265381,
+                "cpuMs": 32.73700000000007
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.41294097900390625,
+                "cpuMs": 0.4129999999999967
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 1.9121170043945312,
+                "cpuMs": 1.9119999999999693
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.0011920928955078125,
+                "cpuMs": 0.0010000000000287557
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 35.97593307495117,
+                "cpuMs": 35.95500000000001
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.3628730773925781,
+                "cpuMs": 0.36199999999997345
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 189.4052028656006,
+                "cpuMs": 38.05900000000001
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.42891502380371094,
+                "cpuMs": 0.4290000000000127
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 1.8401145935058594,
+                "cpuMs": 1.8369999999999775
+              },
+              {
+                "stage": "session_save",
+                "outcome": "success",
+                "wallMs": 0.39196014404296875,
+                "cpuMs": 0.3909999999999747
+              },
+              {
+                "stage": "json_output",
+                "outcome": "success",
+                "wallMs": 0.8151531219482422,
+                "cpuMs": 0.8580000000000254
+              }
+            ],
+            "http": [
+              {
+                "index": 1,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 131.82401657104492,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 2,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 26.99899673461914,
+                "bodyMs": 107.52081871032715,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 3,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 224.91192817687988,
+                "bodyMs": 0.00286102294921875,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 4,
+                "status": 200,
+                "bytes": 299287,
+                "headersMs": 28.482913970947266,
+                "bodyMs": 123.37708473205566,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 5,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 190.34099578857422,
+                "bodyMs": 0.0030994415283203125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 6,
+                "status": 200,
+                "bytes": 291093,
+                "headersMs": 26.489973068237305,
+                "bodyMs": 105.47089576721191,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 7,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 102.22816467285156,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 8,
+                "status": 200,
+                "bytes": 268519,
+                "headersMs": 24.906158447265625,
+                "bodyMs": 70.93596458435059,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 9,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 30.56192398071289,
+                "bodyMs": 0.0021457672119140625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 10,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 25.285959243774414,
+                "bodyMs": 51.92303657531738,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 11,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 232.72299766540527,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 12,
+                "status": 200,
+                "bytes": 307197,
+                "headersMs": 25.964975357055664,
+                "bodyMs": 94.52319145202637,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 13,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 237.59889602661133,
+                "bodyMs": 0.03600120544433594,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 14,
+                "status": 200,
+                "bytes": 310135,
+                "headersMs": 26.1688232421875,
+                "bodyMs": 86.17401123046875,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 15,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 136.17897033691406,
+                "bodyMs": 0.0011920928955078125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 16,
+                "status": 200,
+                "bytes": 285062,
+                "headersMs": 25.326013565063477,
+                "bodyMs": 52.43706703186035,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 17,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 51.68414115905762,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              },
+              {
+                "index": 18,
+                "status": 200,
+                "bytes": 255045,
+                "headersMs": 25.004863739013672,
+                "bodyMs": 76.29704475402832,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              }
+            ],
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          }
+        },
+        {
+          "round": 2,
+          "variant": "reuse",
+          "matchesBaseline": true,
+          "summary": {
+            "externalMs": 2872.75,
+            "cliMs": 2676.235,
+            "cliCpuMs": 422.827,
+            "outsideProfileMs": 196.515,
+            "httpCount": 18,
+            "headersMs": 1510.138,
+            "bodyMs": 781.277,
+            "responseBytes": 2515618,
+            "htmlParseMs": 355.819,
+            "timetableParseMs": 16.854,
+            "selectionCheckMs": 3.522,
+            "sessionLoadMs": 0.969,
+            "sessionSaveMs": 0.411,
+            "jsonOutputMs": 0.776,
+            "initialFlowMs": 335.924,
+            "moduleFetchMs": 2316.794,
+            "statusCounts": {
+              "200": 9,
+              "302": 9
+            },
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          },
+          "profile": {
+            "version": 1,
+            "operation": "timetable",
+            "outcome": "success",
+            "wallMs": 2676.2351989746094,
+            "cpuMs": 422.82700000000006,
+            "transport": "reuse",
+            "connectionsCreated": 1,
+            "stages": [
+              {
+                "stage": "session_load",
+                "outcome": "success",
+                "wallMs": 0.96893310546875,
+                "cpuMs": 0.4220000000000057
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "wallMs": 48.07710647583008,
+                "cpuMs": 48.01100000000001
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.32711029052734375,
+                "cpuMs": 0.32799999999999496
+              },
+              {
+                "stage": "initial_flow",
+                "outcome": "success",
+                "wallMs": 335.9239101409912,
+                "cpuMs": 60.09100000000001
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0030000000000030003
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 49.671173095703125,
+                "cpuMs": 49.61100000000002
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.36597251892089844,
+                "cpuMs": 0.36600000000003297
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 438.6448860168457,
+                "cpuMs": 55.74599999999999
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.47516822814941406,
+                "cpuMs": 0.4750000000000032
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 2.3620128631591797,
+                "cpuMs": 2.3620000000000028
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 30.855894088745117,
+                "cpuMs": 30.827999999999996
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.30517578125,
+                "cpuMs": 0.3049999999999997
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 360.34512519836426,
+                "cpuMs": 34.48100000000001
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.38504600524902344,
+                "cpuMs": 0.38399999999999546
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 1.920938491821289,
+                "cpuMs": 1.922000000000007
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 44.1889762878418,
+                "cpuMs": 44.140999999999984
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.5369186401367188,
+                "cpuMs": 0.5340000000000344
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 237.9920482635498,
+                "cpuMs": 48.25099999999999
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.47397613525390625,
+                "cpuMs": 0.4730000000000012
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 1.981973648071289,
+                "cpuMs": 1.9779999999999798
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0,
+                "cpuMs": 0.0010000000000287557
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 30.922889709472656,
+                "cpuMs": 30.73699999999996
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.4220008850097656,
+                "cpuMs": 0.42199999999997795
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 136.03615760803223,
+                "cpuMs": 34.01700000000002
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.4069805145263672,
+                "cpuMs": 0.4069999999999907
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 1.7490386962890625,
+                "cpuMs": 1.7379999999999618
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 40.00496864318848,
+                "cpuMs": 39.51600000000005
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.3979206085205078,
+                "cpuMs": 0.3969999999999807
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 369.3370819091797,
+                "cpuMs": 42.99000000000003
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.4558563232421875,
+                "cpuMs": 0.45600000000001195
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 2.4709701538085938,
+                "cpuMs": 2.4179999999999757
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 42.60706901550293,
+                "cpuMs": 42.39600000000004
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.3879070281982422,
+                "cpuMs": 0.38799999999999946
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 381.82520866394043,
+                "cpuMs": 47.021000000000036
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.45990943908691406,
+                "cpuMs": 0.4609999999999892
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 2.5780200958251953,
+                "cpuMs": 2.5350000000000095
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 36.785125732421875,
+                "cpuMs": 36.63700000000003
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.3619194030761719,
+                "cpuMs": 0.36000000000002697
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 248.9640712738037,
+                "cpuMs": 42.62300000000002
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.4458427429199219,
+                "cpuMs": 0.4449999999999732
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 2.1409988403320312,
+                "cpuMs": 2.1390000000000575
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0,
+                "cpuMs": 0
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 32.70602226257324,
+                "cpuMs": 32.553999999999974
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.36215782165527344,
+                "cpuMs": 0.36199999999997345
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 143.64910125732422,
+                "cpuMs": 34.69100000000003
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.4191398620605469,
+                "cpuMs": 0.41799999999991844
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 1.6498565673828125,
+                "cpuMs": 1.6490000000000116
+              },
+              {
+                "stage": "session_save",
+                "outcome": "success",
+                "wallMs": 0.4107952117919922,
+                "cpuMs": 0.41000000000002146
+              },
+              {
+                "stage": "json_output",
+                "outcome": "success",
+                "wallMs": 0.7760524749755859,
+                "cpuMs": 0.8190000000000142
+              }
+            ],
+            "http": [
+              {
+                "index": 1,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 121.41203880310059,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 2,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 24.956226348876953,
+                "bodyMs": 139.93287086486816,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 3,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 215.3799533843994,
+                "bodyMs": 0.0030994415283203125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 4,
+                "status": 200,
+                "bytes": 299287,
+                "headersMs": 25.584936141967773,
+                "bodyMs": 147.50409126281738,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 5,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 185.69684028625488,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 6,
+                "status": 200,
+                "bytes": 291093,
+                "headersMs": 24.74212646484375,
+                "bodyMs": 118.64995956420898,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 7,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 98.85406494140625,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 8,
+                "status": 200,
+                "bytes": 268519,
+                "headersMs": 24.773836135864258,
+                "bodyMs": 69.52714920043945,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 9,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 30.80010414123535,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 10,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 23.625850677490234,
+                "bodyMs": 50.19021034240723,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 11,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 220.65210342407227,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 12,
+                "status": 200,
+                "bytes": 307197,
+                "headersMs": 24.738788604736328,
+                "bodyMs": 83.45508575439453,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 13,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 228.3179759979248,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 14,
+                "status": 200,
+                "bytes": 310135,
+                "headersMs": 24.592876434326172,
+                "bodyMs": 85.79206466674805,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 15,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 136.41095161437988,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 16,
+                "status": 200,
+                "bytes": 285062,
+                "headersMs": 24.13201332092285,
+                "bodyMs": 51.156044006347656,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 17,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 52.33192443847656,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              },
+              {
+                "index": 18,
+                "status": 200,
+                "bytes": 255045,
+                "headersMs": 23.134946823120117,
+                "bodyMs": 35.05420684814453,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              }
+            ],
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          }
+        },
+        {
+          "round": 2,
+          "variant": "default",
+          "matchesBaseline": true,
+          "summary": {
+            "externalMs": 3968.643,
+            "cliMs": 3769.706,
+            "cliCpuMs": 389.956,
+            "outsideProfileMs": 198.937,
+            "httpCount": 18,
+            "headersMs": 2630.484,
+            "bodyMs": 798.763,
+            "responseBytes": 2515618,
+            "htmlParseMs": 312.442,
+            "timetableParseMs": 15.646,
+            "selectionCheckMs": 3.203,
+            "sessionLoadMs": 1.393,
+            "sessionSaveMs": 0.535,
+            "jsonOutputMs": 0.65,
+            "initialFlowMs": 337.569,
+            "moduleFetchMs": 3409.734,
+            "statusCounts": {
+              "200": 9,
+              "302": 9
+            },
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          },
+          "profile": {
+            "version": 1,
+            "operation": "timetable",
+            "outcome": "success",
+            "wallMs": 3769.7060108184814,
+            "cpuMs": 389.95599999999996,
+            "transport": "default",
+            "connectionsCreated": null,
+            "stages": [
+              {
+                "stage": "session_load",
+                "outcome": "success",
+                "wallMs": 1.3930797576904297,
+                "cpuMs": 0.4070000000000046
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "wallMs": 43.237924575805664,
+                "cpuMs": 37.961000000000006
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.6008148193359375,
+                "cpuMs": 0.5989999999999884
+              },
+              {
+                "stage": "initial_flow",
+                "outcome": "success",
+                "wallMs": 337.568998336792,
+                "cpuMs": 48.892999999999994
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 26.50904655456543,
+                "cpuMs": 25.892
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.4410743713378906,
+                "cpuMs": 0.3989999999999827
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 489.63308334350586,
+                "cpuMs": 31.84799999999999
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.347137451171875,
+                "cpuMs": 0.34800000000001496
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 1.798868179321289,
+                "cpuMs": 1.7689999999999928
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 26.06797218322754,
+                "cpuMs": 25.976
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.30493736267089844,
+                "cpuMs": 0.3060000000000007
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 445.1777935028076,
+                "cpuMs": 30.674000000000007
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.34689903259277344,
+                "cpuMs": 0.34400000000001096
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 1.6911029815673828,
+                "cpuMs": 1.690999999999998
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 37.69421577453613,
+                "cpuMs": 37.47999999999998
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.3979206085205078,
+                "cpuMs": 0.39900000000001046
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 366.2149906158447,
+                "cpuMs": 43.620999999999995
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.45418739318847656,
+                "cpuMs": 0.45400000000000995
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 1.9650459289550781,
+                "cpuMs": 1.9629999999999925
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0010000000000287557
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 34.967899322509766,
+                "cpuMs": 34.855999999999995
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.34689903259277344,
+                "cpuMs": 0.34800000000001496
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 294.9390411376953,
+                "cpuMs": 43.326
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.4210472106933594,
+                "cpuMs": 0.4209999999999492
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 1.7461776733398438,
+                "cpuMs": 1.7459999999999698
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 34.88492965698242,
+                "cpuMs": 34.64899999999999
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.34618377685546875,
+                "cpuMs": 0.34600000000001296
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 555.7520389556885,
+                "cpuMs": 40.81200000000001
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.42510032653808594,
+                "cpuMs": 0.42399999999997995
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 2.447843551635742,
+                "cpuMs": 2.446999999999977
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 36.93699836730957,
+                "cpuMs": 36.85300000000002
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.48804283142089844,
+                "cpuMs": 0.4870000000000152
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 505.44118881225586,
+                "cpuMs": 44.52600000000001
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.45299530029296875,
+                "cpuMs": 0.45200000000000795
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 2.424955368041992,
+                "cpuMs": 2.4239999999999817
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 51.759958267211914,
+                "cpuMs": 49.78899999999997
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.49495697021484375,
+                "cpuMs": 0.46999999999997044
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 453.8271427154541,
+                "cpuMs": 60.40899999999999
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.4410743713378906,
+                "cpuMs": 0.4429999999999712
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 2.2101402282714844,
+                "cpuMs": 2.1920000000000273
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0,
+                "cpuMs": 0
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 20.383119583129883,
+                "cpuMs": 20.306000000000047
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.27489662170410156,
+                "cpuMs": 0.27399999999999647
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 298.7489700317383,
+                "cpuMs": 24.49300000000004
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.31495094299316406,
+                "cpuMs": 0.31400000000003647
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 1.361846923828125,
+                "cpuMs": 1.361000000000001
+              },
+              {
+                "stage": "session_save",
+                "outcome": "success",
+                "wallMs": 0.5350112915039062,
+                "cpuMs": 0.5170000000000452
+              },
+              {
+                "stage": "json_output",
+                "outcome": "success",
+                "wallMs": 0.6499290466308594,
+                "cpuMs": 0.6500000000000394
+              }
+            ],
+            "http": [
+              {
+                "index": 1,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 130.33294677734375,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 2,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 80.89208602905273,
+                "bodyMs": 81.2070369720459,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 3,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 263.9479637145996,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 4,
+                "status": 200,
+                "bytes": 299287,
+                "headersMs": 92.41294860839844,
+                "bodyMs": 106.23693466186523,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 5,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 245.2530860900879,
+                "bodyMs": 0,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 6,
+                "status": 200,
+                "bytes": 291093,
+                "headersMs": 91.23492240905762,
+                "bodyMs": 82.26299285888672,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 7,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 154.24299240112305,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 8,
+                "status": 200,
+                "bytes": 268519,
+                "headersMs": 85.78896522521973,
+                "bodyMs": 88.02199363708496,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 9,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 91.2928581237793,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 10,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 82.34906196594238,
+                "bodyMs": 85.90102195739746,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 11,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 293.9779758453369,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 12,
+                "status": 200,
+                "bytes": 307197,
+                "headersMs": 143.19682121276855,
+                "bodyMs": 83.28104019165039,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 13,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 291.75686836242676,
+                "bodyMs": 0.0021457672119140625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 14,
+                "status": 200,
+                "bytes": 310135,
+                "headersMs": 88.11116218566895,
+                "bodyMs": 88.03200721740723,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 15,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 216.71295166015625,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 16,
+                "status": 200,
+                "bytes": 285062,
+                "headersMs": 82.59701728820801,
+                "bodyMs": 102.16212272644043,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 17,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 111.02509498596191,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              },
+              {
+                "index": 18,
+                "status": 200,
+                "bytes": 255045,
+                "headersMs": 85.3581428527832,
+                "bodyMs": 81.6488265991211,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              }
+            ],
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          }
+        },
+        {
+          "round": 3,
+          "variant": "default",
+          "matchesBaseline": true,
+          "summary": {
+            "externalMs": 4133.665,
+            "cliMs": 3939.389,
+            "cliCpuMs": 497.048,
+            "outsideProfileMs": 194.276,
+            "httpCount": 18,
+            "headersMs": 2590.367,
+            "bodyMs": 942.629,
+            "responseBytes": 2515618,
+            "htmlParseMs": 376.927,
+            "timetableParseMs": 17.168,
+            "selectionCheckMs": 3.608,
+            "sessionLoadMs": 1.206,
+            "sessionSaveMs": 0.389,
+            "jsonOutputMs": 0.762,
+            "initialFlowMs": 362.896,
+            "moduleFetchMs": 3552.412,
+            "statusCounts": {
+              "200": 9,
+              "302": 9
+            },
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          },
+          "profile": {
+            "version": 1,
+            "operation": "timetable",
+            "outcome": "success",
+            "wallMs": 3939.3889904022217,
+            "cpuMs": 497.04800000000006,
+            "transport": "default",
+            "connectionsCreated": null,
+            "stages": [
+              {
+                "stage": "session_load",
+                "outcome": "success",
+                "wallMs": 1.2059211730957031,
+                "cpuMs": 0.4159999999999997
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "wallMs": 37.89496421813965,
+                "cpuMs": 37.84499999999998
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.3070831298828125,
+                "cpuMs": 0.3080000000000027
+              },
+              {
+                "stage": "initial_flow",
+                "outcome": "success",
+                "wallMs": 362.8959655761719,
+                "cpuMs": 50.122
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 43.28489303588867,
+                "cpuMs": 43.132000000000005
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.3559589385986328,
+                "cpuMs": 0.3549999999999942
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 633.2237720489502,
+                "cpuMs": 53.821000000000005
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.43201446533203125,
+                "cpuMs": 0.4309999999999592
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 2.187967300415039,
+                "cpuMs": 2.1879999999999953
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 47.17588424682617,
+                "cpuMs": 47.074999999999974
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.3571510314941406,
+                "cpuMs": 0.3569999999999962
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 472.5949764251709,
+                "cpuMs": 57.12700000000001
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.4611015319824219,
+                "cpuMs": 0.46200000000001795
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 2.282857894897461,
+                "cpuMs": 2.2619999999999862
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 43.637990951538086,
+                "cpuMs": 43.601999999999975
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.39696693420410156,
+                "cpuMs": 0.3970000000000362
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 377.11501121520996,
+                "cpuMs": 54.235000000000035
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.4630088806152344,
+                "cpuMs": 0.46200000000001795
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 1.9381046295166016,
+                "cpuMs": 1.9349999999999645
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 32.733917236328125,
+                "cpuMs": 32.691000000000024
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.3490447998046875,
+                "cpuMs": 0.3469999999999862
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 297.88780212402344,
+                "cpuMs": 43.63199999999995
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.4258155822753906,
+                "cpuMs": 0.4230000000000067
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 1.6410350799560547,
+                "cpuMs": 1.6400000000000303
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.007867813110351562,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 50.91285705566406,
+                "cpuMs": 50.82199999999998
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.4050731658935547,
+                "cpuMs": 0.40400000000001546
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 502.82788276672363,
+                "cpuMs": 59.908000000000015
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.4870891571044922,
+                "cpuMs": 0.4869999999999597
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 2.629995346069336,
+                "cpuMs": 2.620000000000011
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.001999999999946489
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 41.996002197265625,
+                "cpuMs": 41.950000000000045
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.4329681396484375,
+                "cpuMs": 0.4330000000000167
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 517.4319744110107,
+                "cpuMs": 52.512
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.4668235778808594,
+                "cpuMs": 0.4669999999999952
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 2.5780200958251953,
+                "cpuMs": 2.5479999999999947
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.0011920928955078125,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 44.71397399902344,
+                "cpuMs": 44.65900000000006
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.3790855407714844,
+                "cpuMs": 0.3789999999999072
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 430.36508560180664,
+                "cpuMs": 58.91799999999997
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.4680156707763672,
+                "cpuMs": 0.4649999999999377
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 2.215147018432617,
+                "cpuMs": 2.210999999999963
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.0020000000000575113
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 34.5768928527832,
+                "cpuMs": 34.46899999999997
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.3669261932373047,
+                "cpuMs": 0.3670000000000062
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 320.965051651001,
+                "cpuMs": 43.53000000000007
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.40411949157714844,
+                "cpuMs": 0.39999999999995595
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 1.6949176788330078,
+                "cpuMs": 1.6920000000000268
+              },
+              {
+                "stage": "session_save",
+                "outcome": "success",
+                "wallMs": 0.38886070251464844,
+                "cpuMs": 0.38999999999989043
+              },
+              {
+                "stage": "json_output",
+                "outcome": "success",
+                "wallMs": 0.7622241973876953,
+                "cpuMs": 0.7620000000000404
+              }
+            ],
+            "http": [
+              {
+                "index": 1,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 147.7649211883545,
+                "bodyMs": 0.0021457672119140625,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 2,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 90.80386161804199,
+                "bodyMs": 84.95903015136719,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 3,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 276.3209342956543,
+                "bodyMs": 0.0030994415283203125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 4,
+                "status": 200,
+                "bytes": 299287,
+                "headersMs": 93.40906143188477,
+                "bodyMs": 219.7439670562744,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 5,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 238.54494094848633,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 6,
+                "status": 200,
+                "bytes": 291093,
+                "headersMs": 84.38611030578613,
+                "bodyMs": 102.03003883361816,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 7,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 163.02180290222168,
+                "bodyMs": 0.0030994415283203125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 8,
+                "status": 200,
+                "bytes": 268519,
+                "headersMs": 84.8841667175293,
+                "bodyMs": 85.05797386169434,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 9,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 89.48898315429688,
+                "bodyMs": 0.0021457672119140625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 10,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 87.70608901977539,
+                "bodyMs": 87.50295639038086,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 11,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 281.2471389770508,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 12,
+                "status": 200,
+                "bytes": 307197,
+                "headersMs": 85.05988121032715,
+                "bodyMs": 85.09111404418945,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 13,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 298.4488010406494,
+                "bodyMs": 0.0030994415283203125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 14,
+                "status": 200,
+                "bytes": 310135,
+                "headersMs": 88.03296089172363,
+                "bodyMs": 88.38009834289551,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 15,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 194.9460506439209,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 16,
+                "status": 200,
+                "bytes": 285062,
+                "headersMs": 87.08310127258301,
+                "bodyMs": 103.12485694885254,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 17,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 112.98394203186035,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              },
+              {
+                "index": 18,
+                "status": 200,
+                "bytes": 255045,
+                "headersMs": 86.23409271240234,
+                "bodyMs": 86.71998977661133,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              }
+            ],
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          }
+        },
+        {
+          "round": 3,
+          "variant": "reuse",
+          "matchesBaseline": true,
+          "summary": {
+            "externalMs": 2829.809,
+            "cliMs": 2629.689,
+            "cliCpuMs": 429.119,
+            "outsideProfileMs": 200.12,
+            "httpCount": 18,
+            "headersMs": 1521.566,
+            "bodyMs": 721.457,
+            "responseBytes": 2515618,
+            "htmlParseMs": 357.44,
+            "timetableParseMs": 16.675,
+            "selectionCheckMs": 3.585,
+            "sessionLoadMs": 1.157,
+            "sessionSaveMs": 0.476,
+            "jsonOutputMs": 0.811,
+            "initialFlowMs": 286.849,
+            "moduleFetchMs": 2319.148,
+            "statusCounts": {
+              "200": 9,
+              "302": 9
+            },
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          },
+          "profile": {
+            "version": 1,
+            "operation": "timetable",
+            "outcome": "success",
+            "wallMs": 2629.6892166137695,
+            "cpuMs": 429.119,
+            "transport": "reuse",
+            "connectionsCreated": 1,
+            "stages": [
+              {
+                "stage": "session_load",
+                "outcome": "success",
+                "wallMs": 1.1570453643798828,
+                "cpuMs": 0.38300000000000833
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.0021457672119140625,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "wallMs": 43.67709159851074,
+                "cpuMs": 43.62100000000001
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "wallMs": 0.3390312194824219,
+                "cpuMs": 0.3359999999999752
+              },
+              {
+                "stage": "initial_flow",
+                "outcome": "success",
+                "wallMs": 286.8490219116211,
+                "cpuMs": 55.538000000000004
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.0011920928955078125,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 45.87697982788086,
+                "cpuMs": 45.78100000000001
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.3910064697265625,
+                "cpuMs": 0.39000000000000146
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 372.85518646240234,
+                "cpuMs": 52.13799999999999
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 0.47707557678222656,
+                "cpuMs": 0.4770000000000052
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-a",
+                "wallMs": 2.235889434814453,
+                "cpuMs": 2.2359999999999602
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 36.38195991516113,
+                "cpuMs": 36.37800000000002
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.33092498779296875,
+                "cpuMs": 0.33099999999999796
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 329.55384254455566,
+                "cpuMs": 41.28800000000002
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 0.43487548828125,
+                "cpuMs": 0.43499999999999095
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-b",
+                "wallMs": 2.1200180053710938,
+                "cpuMs": 2.1200000000000108
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.001000000000001
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 43.21908950805664,
+                "cpuMs": 43.162000000000035
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.3731250762939453,
+                "cpuMs": 0.3730000000000122
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 218.2791233062744,
+                "cpuMs": 47.44400000000002
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 0.4470348358154297,
+                "cpuMs": 0.4469999999999752
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-c",
+                "wallMs": 1.97601318359375,
+                "cpuMs": 1.9730000000000025
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0,
+                "cpuMs": 0.0010000000000287557
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 34.461021423339844,
+                "cpuMs": 34.391999999999925
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.3390312194824219,
+                "cpuMs": 0.34000000000000696
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 141.96205139160156,
+                "cpuMs": 37.32400000000003
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 0.4341602325439453,
+                "cpuMs": 0.43399999999998995
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "summer",
+                "wallMs": 1.7399787902832031,
+                "cpuMs": 1.7409999999999926
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.0021457672119140625,
+                "cpuMs": 0.003000000000030756
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 45.87507247924805,
+                "cpuMs": 45.78100000000001
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.37097930908203125,
+                "cpuMs": 0.37199999999998346
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 383.44383239746094,
+                "cpuMs": 51.69400000000002
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 0.45418739318847656,
+                "cpuMs": 0.45200000000006346
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-a",
+                "wallMs": 2.38800048828125,
+                "cpuMs": 2.3879999999999457
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 34.19303894042969,
+                "cpuMs": 34.182999999999964
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.34117698669433594,
+                "cpuMs": 0.3410000000000357
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 397.43614196777344,
+                "cpuMs": 38.10000000000002
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 0.43487548828125,
+                "cpuMs": 0.43399999999998995
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-b",
+                "wallMs": 2.279043197631836,
+                "cpuMs": 2.275000000000027
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.00095367431640625,
+                "cpuMs": 0.002000000000002
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 39.60394859313965,
+                "cpuMs": 39.56799999999999
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.48089027404785156,
+                "cpuMs": 0.4609999999999892
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 288.6629104614258,
+                "cpuMs": 46.027999999999956
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 0.4589557647705078,
+                "cpuMs": 0.46000000000001595
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "autumn-c",
+                "wallMs": 2.2339820861816406,
+                "cpuMs": 2.2279999999999522
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0,
+                "cpuMs": 0.0009999999999732445
+              },
+              {
+                "stage": "html_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 34.15203094482422,
+                "cpuMs": 34.119000000000014
+              },
+              {
+                "stage": "page_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.38313865661621094,
+                "cpuMs": 0.38400000000005097
+              },
+              {
+                "stage": "module_fetch",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 186.95497512817383,
+                "cpuMs": 36.607
+              },
+              {
+                "stage": "selection_check",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 0.4439353942871094,
+                "cpuMs": 0.44399999999988893
+              },
+              {
+                "stage": "timetable_parse",
+                "outcome": "success",
+                "module": "spring-break",
+                "wallMs": 1.7020702362060547,
+                "cpuMs": 1.7020000000000923
+              },
+              {
+                "stage": "session_save",
+                "outcome": "success",
+                "wallMs": 0.4761219024658203,
+                "cpuMs": 0.47600000000003195
+              },
+              {
+                "stage": "json_output",
+                "outcome": "success",
+                "wallMs": 0.8108615875244141,
+                "cpuMs": 0.8529999999999927
+              }
+            ],
+            "http": [
+              {
+                "index": 1,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 125.885009765625,
+                "bodyMs": 0.0021457672119140625,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 2,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 24.897098541259766,
+                "bodyMs": 90.78598022460938,
+                "outcome": "success",
+                "stage": "initial_flow"
+              },
+              {
+                "index": 3,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 209.46192741394043,
+                "bodyMs": 0.0050067901611328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 4,
+                "status": 200,
+                "bytes": 299287,
+                "headersMs": 27.585983276367188,
+                "bodyMs": 89.33210372924805,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-a"
+              },
+              {
+                "index": 5,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 180.35888671875,
+                "bodyMs": 0.0040531158447265625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 6,
+                "status": 200,
+                "bytes": 291093,
+                "headersMs": 26.06987953186035,
+                "bodyMs": 86.2879753112793,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-b"
+              },
+              {
+                "index": 7,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 97.69105911254883,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 8,
+                "status": 200,
+                "bytes": 268519,
+                "headersMs": 25.10809898376465,
+                "bodyMs": 51.783084869384766,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-c"
+              },
+              {
+                "index": 9,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 30.82418441772461,
+                "bodyMs": 0,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 10,
+                "status": 200,
+                "bytes": 249640,
+                "headersMs": 24.520158767700195,
+                "bodyMs": 51.74684524536133,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "summer"
+              },
+              {
+                "index": 11,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 223.952054977417,
+                "bodyMs": 0.00286102294921875,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 12,
+                "status": 200,
+                "bytes": 307197,
+                "headersMs": 26.53789520263672,
+                "bodyMs": 86.56907081604004,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-a"
+              },
+              {
+                "index": 13,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 232.50889778137207,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 14,
+                "status": 200,
+                "bytes": 310135,
+                "headersMs": 24.85489845275879,
+                "bodyMs": 105.44204711914062,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-b"
+              },
+              {
+                "index": 15,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 134.51194763183594,
+                "bodyMs": 0.0019073486328125,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 16,
+                "status": 200,
+                "bytes": 285062,
+                "headersMs": 25.244951248168945,
+                "bodyMs": 88.70410919189453,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "autumn-c"
+              },
+              {
+                "index": 17,
+                "status": 302,
+                "bytes": 0,
+                "headersMs": 53.38311195373535,
+                "bodyMs": 0.00095367431640625,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              },
+              {
+                "index": 18,
+                "status": 200,
+                "bytes": 255045,
+                "headersMs": 28.170108795166016,
+                "bodyMs": 70.7848072052002,
+                "outcome": "success",
+                "stage": "module_fetch",
+                "module": "spring-break"
+              }
+            ],
+            "initialFlow": {
+              "timetableRecognized": true,
+              "selectedModule": null
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
