@@ -82,12 +82,19 @@ val login :
 
 val logout : ?session_file:string -> unit -> (unit, Error.t) result
 val status : ?session_file:string -> unit -> (status, Error.t) result
-val grades : ?session_file:string -> unit -> (grade list, Error.t) result
+
+val grades :
+  ?session_file:string ->
+  ?persist_session:bool ->
+  unit ->
+  (grade list, Error.t) result
+
 val grade_to_yojson : grade -> Yojson.Safe.t
 val parse_grades : Soup.soup Soup.node -> (grade list, Error.t) result
 
 val timetable :
   ?session_file:string ->
+  ?persist_session:bool ->
   ?reuse_connections:bool ->
   Module.t ->
   (timetable_entry list, Error.t) result
@@ -96,6 +103,7 @@ val timetable_entry_to_yojson : timetable_entry -> Yojson.Safe.t
 
 val timetable_all :
   ?session_file:string ->
+  ?persist_session:bool ->
   ?reuse_connections:bool ->
   unit ->
   ((Module.t * timetable_entry list) list, Error.t) result
@@ -125,6 +133,7 @@ val unregister :
 
 val notices :
   ?session_file:string ->
+  ?persist_session:bool ->
   ?reuse_connections:bool ->
   kind:Notice_kind.t ->
   unread:bool ->
@@ -137,6 +146,7 @@ type notice_result = notice Notice_pagination.result
 
 val notices_with_metadata :
   ?session_file:string ->
+  ?persist_session:bool ->
   ?all:bool ->
   ?max_pages:int ->
   ?reuse_connections:bool ->

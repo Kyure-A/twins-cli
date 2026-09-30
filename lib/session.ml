@@ -9,7 +9,7 @@ type cookie = {
   created : float;
 }
 
-type t = { mutable cookies : cookie list; path : string }
+type t = { mutable cookies : cookie list; path : string; persist : bool }
 
 let default_path () =
   match Sys.getenv_opt "TWINS_SESSION" with
@@ -24,8 +24,8 @@ let default_path () =
       in
       Filename.concat state_root "twins-cli/session"
 
-let create ?path () =
-  { cookies = []; path = Option.value path ~default:(default_path ()) }
+let create ?path ?(persist = true) () =
+  { cookies = []; path = Option.value path ~default:(default_path ()); persist }
 
 let expired ~now cookie =
   Option.fold ~none:false ~some:(fun expires -> expires <= now) cookie.expires
@@ -90,8 +90,8 @@ let cookie_of_json json =
   then failwith "invalid cookie";
   cookie
 
-let load ?path ?(allow_incompatible = false) () =
-  let session = create ?path () in
+let load ?path ?(persist = true) ?(allow_incompatible = false) () =
+  let session = create ?path ~persist () in
   (if Sys.file_exists session.path then
      (* Read outside the parser handler so filesystem errors retain their type.
        Old unscoped cookies are never guessed, sent, deleted, or overwritten. *)
@@ -117,26 +117,27 @@ let load ?path ?(allow_incompatible = false) () =
 
 let save session =
   prune session;
-  let directory = Filename.dirname session.path in
-  Util.mkdir_p directory;
-  let temporary, channel =
-    Filename.open_temp_file ~temp_dir:directory ~perms:0o600 ".twins-session-"
-      ".json"
-  in
-  Fun.protect
-    ~finally:(fun () ->
-      close_out_noerr channel;
-      if Sys.file_exists temporary then Sys.remove temporary)
-    (fun () ->
-      Yojson.Safe.to_channel channel
-        (`Assoc
-           [
-             ("version", `Int 2);
-             ("cookies", `List (List.map cookie_to_json session.cookies));
-           ]);
-      output_char channel '\n';
-      close_out channel;
-      Unix.rename temporary session.path)
+  if session.persist then (
+    let directory = Filename.dirname session.path in
+    Util.mkdir_p directory;
+    let temporary, channel =
+      Filename.open_temp_file ~temp_dir:directory ~perms:0o600 ".twins-session-"
+        ".json"
+    in
+    Fun.protect
+      ~finally:(fun () ->
+        close_out_noerr channel;
+        if Sys.file_exists temporary then Sys.remove temporary)
+      (fun () ->
+        Yojson.Safe.to_channel channel
+          (`Assoc
+             [
+               ("version", `Int 2);
+               ("cookies", `List (List.map cookie_to_json session.cookies));
+             ]);
+        output_char channel '\n';
+        close_out channel;
+        Unix.rename temporary session.path))
 
 let authenticate ?path operation =
   let session = create ?path () in
@@ -145,7 +146,8 @@ let authenticate ?path operation =
 
 let clear session =
   session.cookies <- [];
-  if Sys.file_exists session.path then Sys.remove session.path
+  if session.persist && Sys.file_exists session.path then
+    Sys.remove session.path
 
 let is_empty session =
   prune session;

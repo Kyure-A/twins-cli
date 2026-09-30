@@ -49,6 +49,22 @@ Cookies retain their host/domain, path, Secure flag and expiry. Unscoped session
 files from older versions are no longer usable: `auth status` reports logged
 out, and `auth login` replaces the old file only after successful authentication.
 A failed login retains the existing file. Session writes are atomic and private.
+For explicit parallel-read experiments, `grades`, `timetable`, and `notices`
+accept `--no-persist-session`. Each process loads the existing cookies normally
+and applies response updates only in memory; it neither saves nor deletes the
+session file, including on authentication failure. This avoids competing cookie
+file writes but does not create independent server login sessions or establish
+that concurrent Web Flows are supported. Use the same flag for serial controls
+and verify authentication after the experiment. Ordinary reads keep their
+existing persistence behavior.
+
+`node scripts/benchmark-parallel-reads.mjs COMMIT_SHA OUTPUT_JSON 3` compares
+three alternating serial/four-process batches using a full Git revision and
+the canonical GitHub flake. It reads grades, all timetable modules, and complete
+class/general notice lists. It compares complete JSON values in memory and
+retains only timings, equality flags, and sanitized failures. A failure stops
+the remaining workers; authentication is checked before and after the run.
+
 All requests and redirects stay on the TWINS HTTPS origin; cross-origin,
 non-HTTPS and nonstandard-port targets are rejected before credentials can be
 replayed. This matches the CLI's direct TWINS portal login flow.

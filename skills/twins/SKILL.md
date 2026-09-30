@@ -99,6 +99,15 @@ Return only the academic or account data needed for the request. Do not persist,
 
 ## Diagnose timetable performance
 
+For an explicitly requested parallel-read experiment, `grades`, `timetable`,
+and `notices` support `--no-persist-session`. Each process uses the saved login
+but keeps cookie updates and authentication-failure clearing in memory, leaving
+the saved session file unchanged. Do not copy or inspect the cookie file. This
+does not create separate server login sessions. Use independent flows, bound
+concurrency, compare complete outputs with a serial control using the same flag,
+and check `auth status` after all workers finish. Keep ordinary reads persistent;
+this option is for diagnostics, not automatic login recovery.
+
 When investigating fetch latency, add `--profile` to the requested timetable
 read, for example `timetable --all --json --profile`. It supports single-module
 reads too and follows the same authentication policy above. Do not enable it for

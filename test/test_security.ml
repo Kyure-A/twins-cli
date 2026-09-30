@@ -138,6 +138,67 @@ let test_persistence () =
       Alcotest.(check bool)
         "explicit logout can delete legacy session" false (Sys.file_exists path))
 
+let test_ephemeral_existing_session () =
+  with_file (fun path ->
+      let saved = Session.create ~path () in
+      Session.update_cookie saved ~origin "sid=saved-fixture; Path=/; Secure";
+      Session.save saved;
+      let original = read path in
+      let ephemeral = Session.load ~path ~persist:false () in
+      eq "ephemeral load uses saved cookies" "sid=saved-fixture"
+        (Session.cookie_header ephemeral origin);
+      Session.update_cookie ephemeral ~origin
+        "sid=updated-fixture; Path=/; Secure";
+      Session.save ephemeral;
+      eq "ephemeral response cookies remain usable" "sid=updated-fixture"
+        (Session.cookie_header ephemeral origin);
+      eq "ephemeral save retains original bytes" original (read path);
+      (* Authentication failure clears the session before unwinding. A parallel
+         reader must not remove another process's saved login in that path. *)
+      let failure =
+        Internal_error.protect (fun () ->
+            Session.clear ephemeral;
+            Internal_error.authentication_required ())
+      in
+      (match failure with
+      | Error Error.Authentication_required -> ()
+      | _ -> Alcotest.fail "expected authentication failure");
+      Alcotest.(check bool)
+        "authentication failure clears memory" true
+        (Session.is_empty ephemeral);
+      Session.save ephemeral;
+      eq "ephemeral clear retains original bytes" original (read path);
+      let persistent = Session.load ~path () in
+      Session.update_cookie persistent ~origin
+        "sid=persistent-fixture; Path=/; Secure";
+      Session.save persistent;
+      eq "default load remains persistent" "sid=persistent-fixture"
+        (Session.cookie_header (Session.load ~path ()) origin);
+      Session.clear persistent;
+      Alcotest.(check bool)
+        "default clear removes saved file" false (Sys.file_exists path))
+
+let test_ephemeral_missing_session () =
+  with_file (fun directory ->
+      Sys.remove directory;
+      let path = Filename.concat directory "session.json" in
+      let exercise jar =
+        Session.update_cookie jar ~origin
+          "sid=in-memory-fixture; Path=/; Secure";
+        Session.save jar;
+        eq "new cookies usable without a file" "sid=in-memory-fixture"
+          (Session.cookie_header jar origin);
+        Alcotest.(check bool)
+          "save creates no file" false (Sys.file_exists path);
+        Alcotest.(check bool)
+          "save creates no directory" false
+          (Sys.file_exists directory);
+        Session.clear jar;
+        Alcotest.(check bool) "clear empties memory" true (Session.is_empty jar)
+      in
+      exercise (Session.create ~path ~persist:false ());
+      exercise (Session.load ~path ~persist:false ()))
+
 let run_request ?body send =
   Lwt_main.run (Http_client.request_lwt ~send ?body (session ()) `POST origin 8)
 
@@ -244,6 +305,11 @@ let () =
           Alcotest.test_case "prefix and header validation" `Quick test_prefixes;
           Alcotest.test_case "private persistence and legacy status" `Quick
             test_persistence;
+          Alcotest.test_case
+            "ephemeral saved session and authentication failure" `Quick
+            test_ephemeral_existing_session;
+          Alcotest.test_case "ephemeral session creates no filesystem state"
+            `Quick test_ephemeral_missing_session;
         ] );
       ( "HTTP",
         [

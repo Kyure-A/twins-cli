@@ -23,6 +23,12 @@ timetable_help=$("${cli[@]}" timetable --help=plain)
 grep -q -- '--all' <<<"$timetable_help"
 grep -q -- '--profile' <<<"$timetable_help"
 grep -q -- '--no-reuse-connections' <<<"$timetable_help"
+grep -q -- '--no-persist-session' <<<"$timetable_help"
+grades_help=$("${cli[@]}" grades --help=plain)
+grep -q -- '--no-persist-session' <<<"$grades_help"
+if grep -q -- '--no-persist-session' <<<"$registration_help"; then
+  exit 1
+fi
 
 menu_output=$("${cli[@]}" menu)
 grep -q $'registration\tRSW0001000-flow' <<<"$menu_output"
@@ -135,6 +141,7 @@ grep -q -- '--all' <<<"$notice_help"
 grep -q -- '--metadata' <<<"$notice_help"
 grep -q -- '--max-pages=N' <<<"$notice_help"
 grep -q -- '--no-reuse-connections' <<<"$notice_help"
+grep -q -- '--no-persist-session' <<<"$notice_help"
 
 set +e
 invalid_pages=$("${cli[@]}" notices --max-pages 0 --metadata --json --session "$session_file" 2>&1)
@@ -182,4 +189,8 @@ cmp "$session_file" "$session_file.before"
 # The diagnostic opt-out also works for ordinary reads without profiling.
 expect_timetable_json_error protocol_error --module spring-a --no-reuse-connections
 expect_timetable_json_error protocol_error --all --no-reuse-connections
+cmp "$session_file" "$session_file.before"
+
+expect_timetable_json_error protocol_error --all --no-persist-session
+expect_timetable_json_error protocol_error --module spring-a --no-persist-session
 cmp "$session_file" "$session_file.before"

@@ -66,6 +66,12 @@ let session =
 
 let json = Arg.(value & flag & info [ "json" ] ~doc:"機械可読な JSON で出力します。")
 
+let no_persist_session =
+  Arg.(
+    value & flag
+    & info [ "no-persist-session" ]
+        ~doc:"並列読み取りの比較計測用。Cookie の更新・削除をメモリ内だけで行い、保存済みセッションは変更しません。")
+
 let print_json value =
   Yojson.Safe.pretty_to_channel stdout value;
   output_char stdout '\n'
@@ -137,9 +143,13 @@ let auth_command =
     [ login_command; status_command; logout_command ]
 
 let grades_command =
-  let execute session_file json =
+  let execute session_file json no_persist_session =
     run (fun () ->
-        let grades = Twins.grades ?session_file () |> unwrap in
+        let grades =
+          Twins.grades ?session_file ~persist_session:(not no_persist_session)
+            ()
+          |> unwrap
+        in
         if json then print_json (`List (List.map Twins.grade_to_yojson grades))
         else (
           print_tsv
@@ -176,7 +186,7 @@ let grades_command =
   in
   Cmd.v
     (Cmd.info "grades" ~doc:"成績を一覧表示します。")
-    Term.(const execute $ session $ json)
+    Term.(const execute $ session $ json $ no_persist_session)
 
 let module_slug =
   let choices = Twins.Module.all |> List.map Twins.Module.to_string in
@@ -206,8 +216,9 @@ let timetable_command =
           ~doc:"診断や比較計測のため、既定で有効な HTTP 接続の再利用を無効にします。")
   in
   let execute session_file selected_module all json profile no_reuse_connections
-      =
+      no_persist_session =
     let reuse_connections = not no_reuse_connections in
+    let persist_session = not no_persist_session in
     run ~json_errors:json (fun () ->
         Profile.run ~enabled:profile
           ~emit:(fun report ->
@@ -218,13 +229,15 @@ let timetable_command =
             let snapshots =
               match (all, selected_module) with
               | true, None ->
-                  Twins.timetable_all ?session_file ~reuse_connections ()
+                  Twins.timetable_all ?session_file ~reuse_connections
+                    ~persist_session ()
                   |> unwrap
               | false, Some slug ->
                   let module_ = Twins.Module.of_string slug |> unwrap in
                   [
                     ( module_,
-                      Twins.timetable ?session_file ~reuse_connections module_
+                      Twins.timetable ?session_file ~reuse_connections
+                        ~persist_session module_
                       |> unwrap );
                   ]
               | _ ->
@@ -266,7 +279,7 @@ let timetable_command =
     (Cmd.info "timetable" ~doc:"履修時間割を表示します。")
     Term.(
       const execute $ session $ selected_module $ all $ json $ profile
-      $ no_reuse_connections)
+      $ no_reuse_connections $ no_persist_session)
 
 let course_code =
   Arg.(required & pos 0 (some string) None & info [] ~docv:"COURSE_CODE")
@@ -472,10 +485,11 @@ let notices_command =
           ~doc:"比較診断用に、掲示一覧のページ送りで HTTP 接続を再利用しません。")
   in
   let execute session_file kind unread title limit all max_pages metadata json
-      no_reuse_connections =
+      no_reuse_connections no_persist_session =
     run (fun () ->
         let result =
           Twins.notices_with_metadata ?session_file ~all ~max_pages ~kind
+            ~persist_session:(not no_persist_session)
             ~reuse_connections:(not no_reuse_connections) ~unread ~title ~limit
             ()
           |> unwrap
@@ -509,7 +523,7 @@ let notices_command =
     (Cmd.info "notices" ~doc:"授業・一般掲示を検索します。")
     Term.(
       const execute $ session $ notice_kind $ unread $ title $ limit $ all
-      $ max_pages $ metadata $ json $ no_reuse_connections)
+      $ max_pages $ metadata $ json $ no_reuse_connections $ no_persist_session)
 
 let notice_command =
   let seq = Arg.(required & pos 0 (some string) None & info [] ~docv:"ID") in
