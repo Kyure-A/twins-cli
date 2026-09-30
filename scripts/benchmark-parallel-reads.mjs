@@ -78,15 +78,49 @@ async function run(args) {
           "unexpected_error",
         ]);
         let safeCode = null;
+        let httpStatus;
         try {
           const last = JSON.parse(stderr.trim().split("\n").at(-1));
           if (known.has(last?.error?.code)) safeCode = last.error.code;
         } catch {}
+        // Older text errors can contain URLs or server data. Match only known
+        // local messages and retain the category, never the original string.
+        if (safeCode === null) {
+          const http = stderr.match(/TWINS returned HTTP ([1-5][0-9]{2}) for /);
+          if (http) {
+            safeCode = "http_error";
+            httpStatus = Number(http[1]);
+          } else {
+            const categories = [
+              [
+                "TWINS notice result table was not found",
+                "missing_notice_table",
+              ],
+              ["TWINS page does not contain form", "missing_form"],
+              [
+                "TWINS did not return a Web Flow execution key",
+                "missing_flow_key",
+              ],
+              [
+                "TWINS session is missing or expired",
+                "authentication_required",
+              ],
+              ["TWINS HTTP request timed out", "timeout"],
+              ["End_of_file", "transport_eof"],
+              ["ECONNRESET", "connection_reset"],
+              ["Broken pipe", "broken_pipe"],
+            ];
+            safeCode =
+              categories.find(([message]) => stderr.includes(message))?.[1] ??
+              null;
+          }
+        }
         reject(
           Object.assign(Error("command_failed"), {
             safe: {
               exitCode: code,
               reason: limit ?? safeCode ?? "unclassified_command_failure",
+              ...(httpStatus === undefined ? {} : { httpStatus }),
             },
           }),
         );
@@ -153,6 +187,15 @@ async function batch(mode, round) {
   const results = {};
   const timings = {};
   let firstFailure;
+  const failureSummary = () => ({
+    round,
+    mode,
+    externalMs: performance.now() - started,
+    peakCliProcesses: peak,
+    operationsMs: timings,
+    complete: false,
+    failure: firstFailure.safe,
+  });
   async function operation(spec) {
     try {
       const r = await run([...spec.args, "--no-persist-session"]);
@@ -193,12 +236,19 @@ async function batch(mode, round) {
       throw failure;
     }
   }
-  if (mode === "serial") {
-    for (const spec of operations) await operation(spec);
-  } else {
-    const settled = await Promise.allSettled(operations.map(operation));
-    const failed = settled.filter((x) => x.status === "rejected");
-    if (failed.length) throw firstFailure;
+  try {
+    if (mode === "serial") {
+      for (const spec of operations) await operation(spec);
+    } else {
+      const settled = await Promise.allSettled(operations.map(operation));
+      const failed = settled.filter((x) => x.status === "rejected");
+      if (failed.length) throw firstFailure;
+    }
+  } catch (error) {
+    const summary = failureSummary();
+    document.batches.push(summary);
+    console.log(JSON.stringify(summary));
+    throw error;
   }
   reference ??= results;
   const equality = Object.fromEntries(

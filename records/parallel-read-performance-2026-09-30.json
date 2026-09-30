@@ -1,0 +1,87 @@
+{
+  "description": "Four independent read processes under one saved login. Both serial controls completed; both parallel attempts failed in general notices. The first failure was not classified. The second was a missing notice table. Incomplete parallel duration is not a speedup measurement.",
+  "attempts": [
+    {
+      "measuredAt": "2026-09-30T07:36:30.052Z",
+      "revision": "734bccf2750550a26207eaccbe4ecd819ccbddb4",
+      "method": "Canonical warmed GitHub flake; grades, all timetable, all class notices, all general notices. Every worker uses --no-persist-session; no cookie files copied or inspected, no returned account data persisted. Full parsed JSON equality in memory. Alternating serial and four concurrent CLI processes.",
+      "authBefore": true,
+      "authAfter": true,
+      "batches": [
+        {
+          "round": 1,
+          "mode": "serial",
+          "externalMs": 15041.968125,
+          "peakCliProcesses": 1,
+          "operationsMs": {
+            "grades": 670.151417,
+            "timetable": 2758.6161249999996,
+            "classes": 4149.433625,
+            "general": 7462.278542
+          },
+          "matchesReference": {
+            "grades": true,
+            "timetable": true,
+            "classes": true,
+            "general": true
+          }
+        }
+      ],
+      "success": false,
+      "failure": {
+        "operation": "general",
+        "exitCode": 1,
+        "reason": "unclassified_command_failure"
+      }
+    },
+    {
+      "measuredAt": "2026-09-30T07:37:43.076Z",
+      "revision": "734bccf2750550a26207eaccbe4ecd819ccbddb4",
+      "method": "Canonical warmed GitHub flake; grades, all timetable, all class notices, all general notices. Every worker uses --no-persist-session; no cookie files copied or inspected, no returned account data persisted. Full parsed JSON equality in memory. Alternating serial and four concurrent CLI processes.",
+      "authBefore": true,
+      "authAfter": true,
+      "batches": [
+        {
+          "round": 1,
+          "mode": "serial",
+          "externalMs": 13808.746125000001,
+          "peakCliProcesses": 1,
+          "operationsMs": {
+            "grades": 665.715166,
+            "timetable": 2575.3809170000004,
+            "classes": 4189.319833,
+            "general": 6376.6182499999995
+          },
+          "matchesReference": {
+            "grades": true,
+            "timetable": true,
+            "classes": true,
+            "general": true
+          }
+        },
+        {
+          "round": 1,
+          "mode": "parallel4",
+          "externalMs": 2913.1439579999987,
+          "peakCliProcesses": 4,
+          "operationsMs": {
+            "grades": 729.7689160000009,
+            "timetable": 2639.167874999999
+          },
+          "complete": false,
+          "failure": {
+            "operation": "general",
+            "exitCode": 1,
+            "reason": "missing_notice_table"
+          }
+        }
+      ],
+      "success": false,
+      "failure": {
+        "operation": "general",
+        "exitCode": 1,
+        "reason": "missing_notice_table"
+      }
+    }
+  ]
+}
