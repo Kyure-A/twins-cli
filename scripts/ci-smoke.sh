@@ -144,12 +144,47 @@ grep -q -- '--no-reuse-connections' <<<"$notice_help"
 grep -q -- '--no-persist-session' <<<"$notice_help"
 grep -q -- '--diagnose' <<<"$notice_help"
 grep -q -- '--pause-after=PHASE' <<<"$notice_help"
+grep -q -- '--no-flow-lock' <<<"$notice_help"
 pause_status=0
 "${cli[@]}" notices --pause-after initial --session "$session_file" \
   > "$smoke_directory/pause.stdout" 2> "$smoke_directory/pause.stderr" || pause_status=$?
 test "$pause_status" -eq 1
 test ! -s "$smoke_directory/pause.stdout"
-grep -q -- '--pause-after requires --diagnose' "$smoke_directory/pause.stderr"
+grep -q -- '--pause-after requires --no-flow-lock' "$smoke_directory/pause.stderr"
+
+for flags in '--no-flow-lock' '--no-flow-lock --diagnose' '--no-flow-lock --no-persist-session'; do
+  unsafe_status=0
+  # All words below are fixed option literals; no account data is expanded.
+  read -r -a options <<<"$flags"
+  "${cli[@]}" notices "${options[@]}" --session "$session_file" \
+    > "$smoke_directory/unsafe.stdout" 2> "$smoke_directory/unsafe.stderr" || unsafe_status=$?
+  test "$unsafe_status" -eq 1
+  test ! -s "$smoke_directory/unsafe.stdout"
+  if [[ "$flags" == *--diagnose* ]]; then
+    test "$(< "$smoke_directory/unsafe.stderr")" = '{"error":{"code":"invalid_argument"}}'
+  else
+    grep -q -- '--no-flow-lock requires --diagnose and --no-persist-session' "$smoke_directory/unsafe.stderr"
+  fi
+done
+test ! -e "$session_file.notices.lock"
+
+# Missing parent fails before session/network access. Diagnostics and the final
+# error both contain only fixed labels, even if a failure's path has a token.
+diagnose_status=0
+"${cli[@]}" notices --diagnose --session "$smoke_directory/missing/PRIVATE_FIXTURE" \
+  > "$smoke_directory/diagnose.stdout" 2> "$smoke_directory/diagnose.stderr" || diagnose_status=$?
+test "$diagnose_status" -eq 1
+test ! -s "$smoke_directory/diagnose.stdout"
+{
+  IFS= read -r diagnosis_line
+  IFS= read -r diagnosis_error
+  if IFS= read -r extra_line; then exit 1; fi
+} < "$smoke_directory/diagnose.stderr"
+grep -q '^{"noticeDiagnostics":{' <<<"$diagnosis_line"
+grep -Fq '"pages":[]' <<<"$diagnosis_line"
+test "$diagnosis_error" = '{"error":{"code":"authentication_required"}}'
+if grep -q 'PRIVATE_FIXTURE' "$smoke_directory/diagnose.stderr"; then exit 1; fi
+test ! -e "$smoke_directory/missing"
 
 set +e
 invalid_pages=$("${cli[@]}" notices --max-pages 0 --metadata --json --session "$session_file" 2>&1)

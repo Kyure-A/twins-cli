@@ -181,6 +181,13 @@ async function run(args, onPause) {
         try {
           const last = JSON.parse(stderr.trim().split("\n").at(-1));
           if (known.has(last?.error?.code)) safeCode = last.error.code;
+          if (
+            safeCode === "http_error" &&
+            Number.isInteger(last.error.httpStatus) &&
+            last.error.httpStatus >= 100 &&
+            last.error.httpStatus <= 599
+          )
+            httpStatus = last.error.httpStatus;
         } catch {}
         // Older text errors can contain URLs or server data. Match only known
         // local messages and retain the category, never the original string.
@@ -330,6 +337,9 @@ async function batch(mode, round) {
           "--no-persist-session",
           ...(diagnose && spec.args[0] === "notices" ? ["--diagnose"] : []),
           ...(pauseAfter ? ["--pause-after", pauseAfter] : []),
+          ...(scenario.startsWith("pause-") && spec.args[0] === "notices"
+            ? ["--no-flow-lock"]
+            : []),
         ],
         onPause,
       );
@@ -468,7 +478,12 @@ try {
     for (const mode of round % 2 === 1
       ? ["serial", "parallel4"]
       : ["parallel4", "serial"])
-      await batch(mode, round);
+      await batch(
+        mode === "parallel4" && !scenario.endsWith("four-way")
+          ? "concurrent"
+          : mode,
+        round,
+      );
   document.success = true;
 } catch (e) {
   document.failure = e.safe ?? { reason: "probe_failed" };

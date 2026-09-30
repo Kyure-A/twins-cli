@@ -147,6 +147,7 @@ type notice_result = notice Notice_pagination.result
 val notices_with_metadata :
   ?session_file:string ->
   ?persist_session:bool ->
+  ?serialize_flow:bool ->
   ?all:bool ->
   ?max_pages:int ->
   ?reuse_connections:bool ->
@@ -156,6 +157,10 @@ val notices_with_metadata :
   limit:int ->
   unit ->
   (notice_result, Error.t) result
+(** Notice reads serialize the entire Web Flow against other notice reads using
+    the same session path. [serialize_flow=false] is only for deliberate
+    interference diagnostics; independent notice flows invalidate each other on
+    the server. *)
 
 val notice_result_to_yojson : notice_result -> Yojson.Safe.t
 val notice_to_yojson : notice -> Yojson.Safe.t

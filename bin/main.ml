@@ -475,13 +475,20 @@ let notices_command =
           None
       & info [ "pause-after" ] ~docv:"PHASE"
           ~doc:
-            "診断用。initial または search 後に停止し、標準入力の continue で再開します。--diagnose \
+            "診断用。initial または search 後に停止し、標準入力の continue で再開します。--no-flow-lock \
              が必要です。")
   in
   let diagnose =
     Arg.(
       value & flag
       & info [ "diagnose" ] ~doc:"掲示取得の段階とページ構造を匿名化した診断 JSON を標準エラーに出力します。")
+  in
+  let no_flow_lock =
+    Arg.(
+      value & flag
+      & info [ "no-flow-lock" ]
+          ~doc:
+            "競合の再現診断用に掲示フローの排他を無効にします。--diagnose と --no-persist-session が必要です。")
   in
   let unread = Arg.(value & flag & info [ "unread" ] ~doc:"未読の掲示だけを表示します。") in
   let title =
@@ -506,12 +513,18 @@ let notices_command =
           ~doc:"比較診断用に、掲示一覧のページ送りで HTTP 接続を再利用しません。")
   in
   let execute session_file kind unread title limit all max_pages metadata json
-      no_reuse_connections no_persist_session diagnose pause_after =
-    run (fun () ->
-        if pause_after <> None && not diagnose then
+      no_reuse_connections no_persist_session diagnose pause_after no_flow_lock
+      =
+    run ~json_errors:diagnose (fun () ->
+        if no_flow_lock && not (diagnose && no_persist_session) then
           raise
             (Cli_error
-               (Error.Invalid_argument "--pause-after requires --diagnose"));
+               (Error.Invalid_argument
+                  "--no-flow-lock requires --diagnose and --no-persist-session"));
+        if pause_after <> None && not no_flow_lock then
+          raise
+            (Cli_error
+               (Error.Invalid_argument "--pause-after requires --no-flow-lock"));
         let paused = ref false in
         let after_phase phase =
           if (not !paused) && pause_after = Some phase then (
@@ -544,6 +557,7 @@ let notices_command =
             (fun () ->
               Twins.notices_with_metadata ?session_file ~all ~max_pages ~kind
                 ~persist_session:(not no_persist_session)
+                ~serialize_flow:(not no_flow_lock)
                 ~reuse_connections:(not no_reuse_connections) ~unread ~title
                 ~limit ())
           |> unwrap
@@ -578,7 +592,7 @@ let notices_command =
     Term.(
       const execute $ session $ notice_kind $ unread $ title $ limit $ all
       $ max_pages $ metadata $ json $ no_reuse_connections $ no_persist_session
-      $ diagnose $ pause_after)
+      $ diagnose $ pause_after $ no_flow_lock)
 
 let notice_command =
   let seq = Arg.(required & pos 0 (some string) None & info [] ~docv:"ID") in

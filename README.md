@@ -58,6 +58,18 @@ that concurrent Web Flows are supported. Use the same flag for serial controls
 and verify authentication after the experiment. Ordinary reads keep their
 existing persistence behavior.
 
+Class and general notices share a server-side Web Flow: starting another notice
+flow invalidates a preceding search or pagination execution in the same login.
+`notices` and `notice` therefore hold a per-session-file process lock for the
+whole operation, including session load/save and every page. The adjacent empty
+`SESSION.notices.lock` file contains no cookies; waiting is bounded to 120
+seconds and the lock is released on process exit. Do not remove the lock file
+while readers are active. Four CLI readers may start together, with grades and
+timetables proceeding while the two notice readers take turns. Use
+`--no-persist-session` on every worker for concurrent read experiments.
+The guard coordinates this CLI using the same session path; browser activity,
+raw flow commands, and separate copies of a login do not share it.
+
 `node scripts/benchmark-parallel-reads.mjs COMMIT_SHA OUTPUT_JSON 3` compares
 three alternating serial/four-process batches using a full Git revision and
 the canonical GitHub flake. It reads grades, all timetable modules, and complete
@@ -75,8 +87,10 @@ controlled scenario such as `diagnose-four-way`, `notices-pair`, or
 error so their outcomes can be compared.
 `pause-initial` and `pause-search` use an explicit stdin barrier: one general
 notice read pauses after the selected phase, a class notice read finishes, then
-the first resumes. The underlying diagnostic-only `--pause-after` option
-requires `--diagnose` and resumes only on an exact `continue` line. These
+the first resumes. These scenarios explicitly bypass the flow lock. The
+underlying diagnostic-only `--pause-after` option requires `--no-flow-lock`,
+which in turn requires both `--diagnose` and `--no-persist-session`, and resumes
+only on an exact `continue` line. These
 scenarios establish flow interference; their duration is not a speed benchmark.
 
 All requests and redirects stay on the TWINS HTTPS origin; cross-origin,

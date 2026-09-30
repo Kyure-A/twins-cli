@@ -91,3 +91,13 @@
  (name test_notice_diagnostics)
  (modules test_notice_diagnostics)
  (libraries alcotest twins))
+
+(test
+ (name test_flow_lock)
+ (modules test_flow_lock)
+ (flags (:standard -I lib/.twins.objs/byte))
+ (preprocess (action (run cat %{input-file})))
+ (preprocessor_deps
+  ../lib/.twins.objs/byte/flow_lock.cmi
+  ../lib/.twins.objs/byte/internal_error.cmi)
+ (libraries alcotest twins unix))

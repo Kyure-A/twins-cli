@@ -2,7 +2,7 @@
  (name twins)
  (public_name twins-cli.twins)
  (wrapped false)
- (private_modules http_client http_compression internal_error notice_read session util)
+ (private_modules flow_lock http_client http_compression internal_error notice_read session util)
  (flags
   (:standard
    -w

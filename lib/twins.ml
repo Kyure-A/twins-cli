@@ -63,6 +63,16 @@ let with_session ?session_file ?(persist_session = true) operation =
         Profile.measure Profile.Session_save (fun () -> Session.save session))
     (fun () -> operation session)
 
+let with_notice_session ?session_file ?persist_session ?(serialize_flow = true)
+    operation =
+  let read () = with_session ?session_file ?persist_session operation in
+  if serialize_flow then
+    let session_path =
+      Option.value session_file ~default:(Session.default_path ())
+    in
+    Flow_lock.with_lock ~session_path read
+  else read ()
+
 let find_login_form soup =
   soup |> Soup.select "form" |> Soup.to_list
   |> List.find_opt (fun form ->
@@ -731,15 +741,16 @@ let collect_notices session ~limit ~max_pages first =
     ~id:(fun notice -> notice.seq)
     ~limit ~max_pages (1, first)
 
-let notices_with_metadata ?session_file ?persist_session ?(all = false)
-    ?(max_pages = 20) ?(reuse_connections = true) ~kind ~unread ~title ~limit ()
-    =
+let notices_with_metadata ?session_file ?persist_session ?serialize_flow
+    ?(all = false) ?(max_pages = 20) ?(reuse_connections = true) ~kind ~unread
+    ~title ~limit () =
   if limit < 0 then Error (Error.Invalid_argument "--limit は 0 以上で指定してください。")
   else if max_pages < 1 || max_pages > 100 then
     Error (Error.Invalid_argument "--max-pages must be 1..100")
   else
     Internal_error.protect (fun () ->
-        with_session ?session_file ?persist_session (fun session ->
+        with_notice_session ?session_file ?persist_session ?serialize_flow
+          (fun session ->
             Notice_read.run ~reuse_connections
               ~search:(fun () -> notices_page session ~kind ~unread ~title)
               ~collect:(fun page ->
@@ -755,7 +766,7 @@ let notices ?session_file ?persist_session ?reuse_connections ~kind ~unread
   |> Result.map (fun result -> result.Notice_pagination.items)
 
 let notice_detail_exn ?session_file ~kind seq =
-  with_session ?session_file (fun session ->
+  with_notice_session ?session_file (fun session ->
       let page = notices_page session ~kind ~unread:false ~title:"" in
       let rec find pages current_page seen page =
         let href =
